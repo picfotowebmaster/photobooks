@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    container_name: picfoto-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+    networks:
+      - picfoto-network
+
+  imgproxy:
+    image: darthsim/imgproxy:v3.27
+    container_name: picfoto-imgproxy
+    ports:
+      - "8888:8080"
+    environment:
+      IMGPROXY_KEY: ${IMGPROXY_KEY}
+      IMGPROXY_SALT: ${IMGPROXY_SALT}
+      IMGPROXY_USE_ETAG: "true"
+    networks:
+      - picfoto-network
+
+networks:
+  picfoto-network:
+    driver: bridge
