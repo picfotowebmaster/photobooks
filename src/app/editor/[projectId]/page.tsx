@@ -2,10 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { useEditorStore } from "@/stores/editorStore";
-import { EditorCanvas } from "@/components/editor/EditorCanvas";
 import { EditorToolbar } from "@/components/editor/EditorToolbar";
+
+const EditorCanvas = dynamic(
+  () =>
+    import("@/components/editor/EditorCanvas").then((mod) => ({
+      default: mod.EditorCanvas,
+    })),
+  { ssr: false, loading: () => <Spinner size="lg" /> }
+);
 import { EditorSidebar } from "@/components/editor/EditorSidebar";
 import { PageThumbnails } from "@/components/editor/PageThumbnails";
 import { ExportPreview } from "@/components/editor/ExportPreview";

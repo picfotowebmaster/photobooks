@@ -8,6 +8,17 @@ export const CANVAS_FORMAT_DIMENSIONS: Record<string, { w: number; h: number }> 
   "28x21": { w: 3360, h: 2520 },
 };
 
+export const SPREAD_GAP_PX = 16;
+
+export function getSpreadPages(currentPage: number): [number, number] {
+  const base = Math.floor(currentPage / 2) * 2;
+  return [base, base + 1];
+}
+
+export function getSpreadCanvasWidth(pageWidth: number): number {
+  return pageWidth * 2 + SPREAD_GAP_PX;
+}
+
 export const MAX_ZOOM = 2;
 export const MIN_ZOOM = 0.2;
 export const ZOOM_STEP = 0.1;

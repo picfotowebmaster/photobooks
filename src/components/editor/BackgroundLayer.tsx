@@ -6,6 +6,8 @@ interface BackgroundLayerProps {
   pageIndex: number;
   width: number;
   height: number;
+  x?: number;
+  y?: number;
   backgroundColor?: string;
   backgroundUrl?: string;
 }
@@ -13,12 +15,14 @@ interface BackgroundLayerProps {
 export function BackgroundLayer({
   width,
   height,
+  x = 0,
+  y = 0,
   backgroundColor,
 }: BackgroundLayerProps) {
   return (
     <Rect
-      x={0}
-      y={0}
+      x={x}
+      y={y}
       width={width}
       height={height}
       fill={backgroundColor || "#ffffff"}

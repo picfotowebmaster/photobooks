@@ -13,6 +13,10 @@ const nextConfig = {
       bodySizeLimit: "50mb",
     },
   },
+  webpack: (config) => {
+    config.externals = [...config.externals, { canvas: "canvas" }];
+    return config;
+  },
 };
 
 export default nextConfig;

@@ -41,7 +41,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   setCurrentPage: (page) => set({ currentPage: page }),
 
   setTotalPages: (count) => {
-    const clamped = Math.min(40, Math.max(10, count));
+    const even = Math.max(2, count % 2 === 0 ? count : count + 1);
+    const clamped = Math.min(40, Math.max(10, even));
     set({ totalPages: clamped });
   },
 

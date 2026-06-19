@@ -12,10 +12,20 @@ const tools: { id: EditorTool; label: string; icon: string }[] = [
 ];
 
 export function EditorToolbar() {
-  const { activeTool, setActiveTool, zoom, setZoom } = useEditorStore();
+  const { activeTool, setActiveTool, zoom, setZoom, currentPage, totalPages } =
+    useEditorStore();
+
+  const currentSpread = Math.floor(currentPage / 2) + 1;
+  const totalSpreads = totalPages / 2;
 
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-neutral-200 bg-white">
+      <span className="text-sm font-medium text-neutral-500 tabular-nums">
+        Spread {currentSpread} de {totalSpreads}
+      </span>
+
+      <div className="w-px h-5 bg-neutral-200 mx-1" />
+
       {tools.map((tool) => (
         <button
           key={tool.id}
