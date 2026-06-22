@@ -80,15 +80,15 @@ export default function EditorPage() {
 
           <EditorSidebar />
         </div>
-      </div>
 
-      <div className="border-t border-neutral-200 bg-white px-4 py-2 flex items-center justify-end gap-2">
-        <button
-          onClick={() => setExportOpen(true)}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-        >
-          Exportar y pagar
-        </button>
+        <div className="border-t border-neutral-200 bg-white px-4 py-2 flex items-center justify-end gap-2">
+          <button
+            onClick={() => setExportOpen(true)}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+          >
+            Exportar y pagar
+          </button>
+        </div>
       </div>
 
       <Modal open={exportOpen} onClose={() => setExportOpen(false)} title="Vista previa de exportación">
