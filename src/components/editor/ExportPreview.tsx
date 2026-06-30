@@ -5,7 +5,7 @@ import { useEditorStore } from "@/stores/editorStore";
 import { calculatePricing } from "@/lib/pricing/calculator";
 
 interface ExportPreviewProps {
-  format: "20x20" | "21x28" | "28x21";
+  format: "10x10" | "8.5x11" | "8x10";
   coverType: "soft" | "hard";
   onExport: () => void;
 }

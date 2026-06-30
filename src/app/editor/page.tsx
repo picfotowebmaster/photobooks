@@ -14,7 +14,11 @@ export default async function EditorNewPage() {
 
   const { data, error } = await supabase
     .from("projects")
-    .insert({ user_id: user.id } as Record<string, unknown>)
+    .insert({
+      user_id: user.id,
+      format: "10x10",
+      cover_type: "soft",
+    } as Record<string, unknown>)
     .select()
     .single();
 

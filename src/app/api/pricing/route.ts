@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Tipo de tapa no válido" }, { status: 400 });
   }
 
-  if (!["20x20", "21x28", "28x21"].includes(body.format)) {
+  if (!["10x10", "8.5x11", "8x10"].includes(body.format)) {
     return NextResponse.json({ error: "Formato no válido" }, { status: 400 });
   }
 

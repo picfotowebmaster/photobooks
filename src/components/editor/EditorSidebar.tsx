@@ -5,8 +5,13 @@ import { useEditorStore } from "@/stores/editorStore";
 import { Dropzone } from "@/components/ui/Dropzone";
 import { generateLowResPreview, getImageDimensions } from "@/lib/editor/imageProcessor";
 import { v4 as uuid } from "uuid";
+import { toast } from "sonner";
 
-export function EditorSidebar() {
+interface EditorSidebarProps {
+  projectId: string;
+}
+
+export function EditorSidebar({ projectId }: EditorSidebarProps) {
   const { currentPage, photos, addPhotoToCanvas } = useEditorStore();
 
   const handleFilesDrop = useCallback(
@@ -31,9 +36,30 @@ export function EditorSidebar() {
           lowResUrl: preview.objectUrl,
           highResUrl: "",
         });
+
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("projectId", projectId);
+
+          const res = await fetch("/api/upload", { method: "POST", body: formData });
+
+          if (!res.ok) {
+            const err = await res.json();
+            toast.error(err.error || "Error al subir la imagen");
+            continue;
+          }
+
+          const { data } = await res.json();
+          const highResUrl = data.highResUrl as string;
+
+          useEditorStore.getState().updatePhotoPlacement(id, { highResUrl, photoId: data.id as string });
+        } catch {
+          toast.error("Error de conexión al subir la imagen");
+        }
       }
     },
-    [currentPage, photos.length, addPhotoToCanvas]
+    [currentPage, photos.length, addPhotoToCanvas, projectId]
   );
 
   const pagePhotos = photos.filter((p) => p.pageIndex === currentPage);

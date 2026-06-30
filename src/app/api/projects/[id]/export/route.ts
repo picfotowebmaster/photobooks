@@ -3,7 +3,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { exportToZip } from "@/lib/editor/exportEngine";
 import { toExportCoords } from "@/lib/editor/coordinateMapper";
-import { PAGE_WIDTH_PX, PAGE_HEIGHT_PX } from "@/lib/editor/canvasConfig";
+import { getPageDimensions } from "@/lib/editor/canvasConfig";
 
 type DbPage = {
   id: string;
@@ -110,11 +110,13 @@ export async function POST(
     return data.arrayBuffer();
   };
 
+  const dims = getPageDimensions(project.format as "10x10" | "8.5x11" | "8x10");
+
   const zipBlob = await exportToZip(
     {
       pages: exportPages,
-      pageWidthPx: PAGE_WIDTH_PX,
-      pageHeightPx: PAGE_HEIGHT_PX,
+      pageWidthPx: dims.w,
+      pageHeightPx: dims.h,
     },
     highResFetcher
   );

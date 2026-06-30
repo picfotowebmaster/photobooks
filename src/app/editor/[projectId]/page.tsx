@@ -19,7 +19,7 @@ import { PageThumbnails } from "@/components/editor/PageThumbnails";
 import { ExportPreview } from "@/components/editor/ExportPreview";
 import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
-import { PAGE_WIDTH_PX, PAGE_HEIGHT_PX } from "@/lib/editor/canvasConfig";
+import { getPageDimensions } from "@/lib/editor/canvasConfig";
 import type { Project } from "@/types/project";
 
 export default function EditorPage() {
@@ -64,6 +64,8 @@ export default function EditorPage() {
     );
   }
 
+  const dims = getPageDimensions(project.format as "10x10" | "8.5x11" | "8x10");
+
   return (
     <>
       <div className="flex flex-1 flex-col">
@@ -73,12 +75,12 @@ export default function EditorPage() {
           <PageThumbnails />
 
           <EditorCanvas
-            pageWidth={PAGE_WIDTH_PX}
-            pageHeight={PAGE_HEIGHT_PX}
+            pageWidth={dims.w}
+            pageHeight={dims.h}
             scale={zoom}
           />
 
-          <EditorSidebar />
+          <EditorSidebar projectId={projectId} />
         </div>
 
         <div className="border-t border-neutral-200 bg-white px-4 py-2 flex items-center justify-end gap-2">
@@ -93,7 +95,7 @@ export default function EditorPage() {
 
       <Modal open={exportOpen} onClose={() => setExportOpen(false)} title="Vista previa de exportación">
         <ExportPreview
-          format={project.format as "20x20" | "21x28" | "28x21"}
+          format={project.format as "10x10" | "8.5x11" | "8x10"}
           coverType={project.cover_type as "soft" | "hard"}
           onExport={() => setExportOpen(false)}
         />

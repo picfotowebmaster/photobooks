@@ -1,12 +1,16 @@
-export const PAGE_WIDTH_PX = 2550;
-export const PAGE_HEIGHT_PX = 2550;
 export const PAGE_DPI = 300;
 
-export const CANVAS_FORMAT_DIMENSIONS: Record<string, { w: number; h: number }> = {
-  "20x20": { w: PAGE_WIDTH_PX, h: PAGE_HEIGHT_PX },
-  "21x28": { w: 2520, h: 3360 },
-  "28x21": { w: 3360, h: 2520 },
-};
+export const CANVAS_FORMAT_DIMENSIONS = {
+  "10x10": { w: 3000, h: 3000 },
+  "8.5x11": { w: 2550, h: 3300 },
+  "8x10": { w: 2400, h: 3000 },
+} as const satisfies Record<string, { w: number; h: number }>;
+
+export type ProjectFormat = keyof typeof CANVAS_FORMAT_DIMENSIONS;
+
+export function getPageDimensions(format: ProjectFormat): { w: number; h: number } {
+  return CANVAS_FORMAT_DIMENSIONS[format] ?? CANVAS_FORMAT_DIMENSIONS["10x10"];
+}
 
 export const SPREAD_GAP_PX = 16;
 

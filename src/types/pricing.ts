@@ -1,7 +1,7 @@
 export interface PricingInput {
   totalPages: number;
   coverType: "soft" | "hard";
-  format: "20x20" | "21x28" | "28x21";
+  format: "10x10" | "8.5x11" | "8x10";
 }
 
 export interface PricingOutput {

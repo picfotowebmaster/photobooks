@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     .insert({
       user_id: user.id,
       title: body.title || "Fotolibro sin título",
-      format: body.format || "20x20",
+      format: body.format || "10x10",
       cover_type: body.cover_type || "soft",
     } as Record<string, unknown>)
     .select()

@@ -2,9 +2,9 @@ import { useEditorStore } from "@/stores/editorStore";
 import { useCallback } from "react";
 import { useImageUpload } from "./useImageUpload";
 
-export function useEditor() {
+export function useEditor(projectId?: string) {
   const store = useEditorStore();
-  const { processImage } = useImageUpload();
+  const { processImage, uploading } = useImageUpload(projectId);
 
   const addPhotoFromFile = useCallback(
     async (file: File) => {
@@ -17,5 +17,6 @@ export function useEditor() {
   return {
     ...store,
     addPhotoFromFile,
+    uploading,
   };
 }

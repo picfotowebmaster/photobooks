@@ -46,7 +46,7 @@ export default function CheckoutPage() {
 
   const pricing = calculatePricing({
     totalPages,
-    format: project.format as "20x20" | "21x28" | "28x21",
+    format: project.format as "10x10" | "8.5x11" | "8x10",
     coverType: project.cover_type as "soft" | "hard",
   });
 

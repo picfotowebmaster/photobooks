@@ -5,9 +5,9 @@ const MAX_PAGES = 40;
 const PRICE_PER_EXTRA_PAGE = 4.99;
 
 const BASE_PRICES: Record<PricingInput["format"], number> = {
-  "20x20": 29.99,
-  "21x28": 34.99,
-  "28x21": 39.99,
+  "10x10": 29.99,
+  "8.5x11": 34.99,
+  "8x10": 39.99,
 };
 
 const COVER_SURCHARGES: Record<PricingInput["coverType"], number> = {
@@ -42,6 +42,6 @@ export function calculatePricing(input: PricingInput): PricingOutput {
     extraPagesCost,
     coverSurcharge,
     total,
-    currency: "EUR",
+    currency: "MXN",
   };
 }
