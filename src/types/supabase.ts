@@ -37,6 +37,7 @@ export interface Database {
           id: string;
           user_id: string;
           title: string;
+          description: string | null;
           format: string;
           cover_type: string;
           cover_image_url: string | null;
@@ -49,6 +50,7 @@ export interface Database {
           id?: string;
           user_id: string;
           title?: string;
+          description?: string | null;
           format?: string;
           cover_type?: string;
           cover_image_url?: string | null;
@@ -61,6 +63,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           title?: string;
+          description?: string | null;
           format?: string;
           cover_type?: string;
           cover_image_url?: string | null;

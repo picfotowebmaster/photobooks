@@ -2,6 +2,7 @@ export interface Project {
   id: string;
   user_id: string;
   title: string;
+  description: string | null;
   format: "10x10" | "8.5x11" | "8x10";
   cover_type: "soft" | "hard";
   cover_image_url: string | null;

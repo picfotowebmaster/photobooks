@@ -7,9 +7,10 @@ import type { Project } from "@/types/project";
 interface ProjectListProps {
   projects: Project[];
   loading: boolean;
+  onDelete?: (id: string) => void;
 }
 
-export function ProjectList({ projects, loading }: ProjectListProps) {
+export function ProjectList({ projects, loading, onDelete }: ProjectListProps) {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -29,7 +30,7 @@ export function ProjectList({ projects, loading }: ProjectListProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
+        <ProjectCard key={project.id} project={project} onDelete={onDelete} />
       ))}
     </div>
   );

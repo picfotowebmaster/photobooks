@@ -28,6 +28,8 @@ interface CreateProjectModalProps {
 
 export function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
   const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [format, setFormat] = useState<ProjectFormat>("10x10");
   const [coverType, setCoverType] = useState<"soft" | "hard">("soft");
   const [creating, setCreating] = useState(false);
@@ -43,7 +45,12 @@ export function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ format, cover_type: coverType }),
+        body: JSON.stringify({
+          title: title.trim() || undefined,
+          description: description.trim() || undefined,
+          format,
+          cover_type: coverType,
+        }),
       });
 
       if (!res.ok) {
@@ -64,6 +71,34 @@ export function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
   return (
     <Modal open={open} onClose={onClose} title="Nuevo fotolibro">
       <div className="space-y-6">
+        <div>
+          <label className="text-sm font-medium text-neutral-700 block mb-1">
+            Nombre
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Fotolibro sin título"
+            maxLength={100}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-neutral-700 block mb-1">
+            Descripción <span className="text-neutral-400 font-normal">(opcional)</span>
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Describe tu fotolibro..."
+            maxLength={300}
+            rows={2}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+          />
+        </div>
+
         <div>
           <h4 className="text-sm font-medium text-neutral-700 mb-3">Formato</h4>
           <div className="grid grid-cols-3 gap-2">

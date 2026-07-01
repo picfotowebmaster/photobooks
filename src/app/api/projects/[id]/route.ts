@@ -66,6 +66,54 @@ export async function DELETE(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  const { data: photos, error: photosError } = await supabase
+    .from("photos")
+    .select("bucket_path_highres, bucket_path_lowres")
+    .eq("project_id", id);
+
+  if (photosError) {
+    return NextResponse.json({ error: photosError.message }, { status: 500 });
+  }
+
+  const { data: orders, error: ordersError } = await supabase
+    .from("orders")
+    .select("export_url")
+    .eq("project_id", id);
+
+  if (ordersError) {
+    return NextResponse.json({ error: ordersError.message }, { status: 500 });
+  }
+
+  const storagePaths = new Set<string>();
+
+  if (photos) {
+    for (const p of photos) {
+      if (p.bucket_path_highres) storagePaths.add(p.bucket_path_highres);
+      if (p.bucket_path_lowres) storagePaths.add(p.bucket_path_lowres);
+    }
+  }
+
+  if (orders) {
+    for (const o of orders) {
+      if (o.export_url) {
+        const match = o.export_url.match(/\/storage\/v1\/object\/public\/exports\/(.+)/);
+        if (match) storagePaths.add(match[1]);
+      }
+    }
+  }
+
+  if (storagePaths.size > 0) {
+    await supabase.storage
+      .from("photos_highres")
+      .remove(Array.from(storagePaths));
+    await supabase.storage
+      .from("photos_lowres")
+      .remove(Array.from(storagePaths));
+    await supabase.storage
+      .from("exports")
+      .remove(Array.from(storagePaths));
+  }
+
   const { error } = await supabase
     .from("projects")
     .delete()

@@ -16,6 +16,8 @@ export default async function EditorNewPage() {
     .from("projects")
     .insert({
       user_id: user.id,
+      title: "Fotolibro sin título",
+      description: null,
       format: "10x10",
       cover_type: "soft",
     } as Record<string, unknown>)
