@@ -1,68 +1,106 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Text, Transformer } from "react-konva";
+import { useEffect, useRef, useCallback } from "react";
+import { Text, Rect } from "react-konva";
 import Konva from "konva";
+import type { TextPlacement } from "@/types/editor";
 
 interface TextLayerProps {
-  id: string;
-  initialText?: string;
-  x: number;
-  y: number;
-  onUpdate?: (id: string, x: number, y: number, text: string) => void;
+  textPlacement: TextPlacement;
+  isSelected: boolean;
+  isEditing: boolean;
+  onSelect: () => void;
+  onDragEnd: (x: number, y: number) => void;
+  onTransformEnd: (
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    scaleX: number,
+    scaleY: number,
+    rotation: number
+  ) => void;
+  onDblClick: () => void;
+  transformerRef: React.RefObject<Konva.Transformer | null>;
 }
 
 export function TextLayer({
-  id,
-  initialText = "Tu texto",
-  x,
-  y,
-  onUpdate,
+  textPlacement,
+  isSelected,
+  isEditing,
+  onSelect,
+  onDragEnd,
+  onTransformEnd,
+  onDblClick,
+  transformerRef,
 }: TextLayerProps) {
-  const [text, setText] = useState(initialText);
-  const [isEditing, setIsEditing] = useState(false);
   const textRef = useRef<Konva.Text>(null);
-  const transformerRef = useRef<Konva.Transformer>(null);
 
   useEffect(() => {
-    if (isEditing && transformerRef.current && textRef.current) {
+    if (isSelected && textRef.current && transformerRef.current) {
       transformerRef.current.nodes([textRef.current]);
       transformerRef.current.getLayer()?.batchDraw();
     }
-  }, [isEditing]);
+  }, [isSelected, transformerRef]);
+
+  const handleSelect = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent>) => {
+      e.cancelBubble = true;
+      onSelect();
+    },
+    [onSelect]
+  );
+
+  const showBorder = isSelected && !isEditing;
 
   return (
     <>
-      <Text
-        ref={textRef}
-        text={text}
-        x={x}
-        y={y}
-        fontSize={24}
-        fontFamily="sans-serif"
-        fill="#333333"
-        draggable
-        onDblClick={() => setIsEditing(true)}
-        onDblTap={() => setIsEditing(true)}
-        onDragEnd={(e) => {
-          onUpdate?.(id, e.target.x(), e.target.y(), text);
-        }}
-      />
-      {isEditing && (
-        <Transformer
-          ref={transformerRef}
-          enabledAnchors={[
-            "top-left",
-            "top-right",
-            "bottom-left",
-            "bottom-right",
-          ]}
-          boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 30 || newBox.height < 20) return oldBox;
-            return newBox;
-          }}
+      {showBorder && (
+        <Rect
+          x={textPlacement.x - 6}
+          y={textPlacement.y - 6}
+          width={(textPlacement.width ?? textRef.current?.width() ?? 120) + 12}
+          height={Math.max(textPlacement.fontSize * 1.4, 20) + 12}
+          stroke="#3b82f6"
+          strokeWidth={1}
+          dash={[4, 4]}
+          listening={false}
+          rotation={textPlacement.rotation}
         />
       )}
+      <Text
+        ref={textRef}
+        text={textPlacement.text}
+        x={textPlacement.x}
+        y={textPlacement.y}
+        width={textPlacement.width || undefined}
+        fontSize={textPlacement.fontSize}
+        fontFamily={textPlacement.fontFamily}
+        fontStyle={textPlacement.fontStyle}
+        fill={textPlacement.fill}
+        align={textPlacement.align}
+        rotation={textPlacement.rotation}
+        draggable
+        onClick={handleSelect}
+        onTap={handleSelect}
+        onDblClick={onDblClick}
+        onDblTap={onDblClick}
+        onDragEnd={(e) => {
+          onDragEnd(e.target.x(), e.target.y());
+        }}
+        onTransformEnd={(e) => {
+          const node = e.target;
+          onTransformEnd(
+            node.x(),
+            node.y(),
+            node.width() * node.scaleX(),
+            node.height() * node.scaleY(),
+            node.scaleX(),
+            node.scaleY(),
+            node.rotation()
+          );
+        }}
+      />
     </>
   );
 }

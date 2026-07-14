@@ -1,11 +1,21 @@
 import { create } from "zustand";
-import type { PhotoPlacement, EditorTool, PageTemplate } from "@/types/editor";
+import { v4 as uuid } from "uuid";
+import type {
+  PhotoPlacement,
+  TextPlacement,
+  EditorTool,
+  PageTemplate,
+  FontStyle,
+  TextAlign,
+} from "@/types/editor";
 
 interface EditorState {
   currentPage: number;
   totalPages: number;
   photos: PhotoPlacement[];
   selectedPhotoId: string | null;
+  texts: TextPlacement[];
+  selectedTextId: string | null;
   activeTool: EditorTool;
   zoom: number;
   templates: Record<number, PageTemplate>;
@@ -22,6 +32,11 @@ interface EditorState {
   setPageTemplate: (page: number, template: PageTemplate) => void;
   setPageBackground: (page: number, color: string) => void;
   resetEditor: () => void;
+
+  addText: (text: Omit<TextPlacement, "id">) => void;
+  updateText: (id: string, data: Partial<TextPlacement>) => void;
+  removeText: (id: string) => void;
+  selectText: (id: string | null) => void;
 }
 
 const initialState = {
@@ -29,6 +44,8 @@ const initialState = {
   totalPages: 10,
   photos: [],
   selectedPhotoId: null,
+  texts: [],
+  selectedTextId: null,
   activeTool: "select" as EditorTool,
   zoom: 1,
   templates: {},
@@ -46,7 +63,8 @@ export const useEditorStore = create<EditorState>((set) => ({
     set({ totalPages: clamped });
   },
 
-  selectPhoto: (id) => set({ selectedPhotoId: id }),
+  selectPhoto: (id) =>
+    set({ selectedPhotoId: id, selectedTextId: null }),
 
   setActiveTool: (tool) => set({ activeTool: tool }),
 
@@ -73,4 +91,29 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((s) => ({ pageBackgrounds: { ...s.pageBackgrounds, [page]: color } })),
 
   resetEditor: () => set(initialState),
+
+  addText: (textData) => {
+    const id = uuid();
+    const placement: TextPlacement = { id, ...textData };
+    set((s) => ({
+      texts: [...s.texts, placement],
+      selectedTextId: id,
+      selectedPhotoId: null,
+      activeTool: "select",
+    }));
+  },
+
+  updateText: (id, data) =>
+    set((s) => ({
+      texts: s.texts.map((t) => (t.id === id ? { ...t, ...data } : t)),
+    })),
+
+  removeText: (id) =>
+    set((s) => ({
+      texts: s.texts.filter((t) => t.id !== id),
+      selectedTextId: s.selectedTextId === id ? null : s.selectedTextId,
+    })),
+
+  selectText: (id) =>
+    set({ selectedTextId: id, selectedPhotoId: null, activeTool: "select" }),
 }));

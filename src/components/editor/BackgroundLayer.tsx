@@ -28,6 +28,7 @@ export function BackgroundLayer({
       fill={backgroundColor || "#ffffff"}
       perfectDrawEnabled={false}
       shadowForStrokeEnabled={false}
+      listening={false}
     />
   );
 }
