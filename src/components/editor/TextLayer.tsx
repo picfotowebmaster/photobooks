@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { Text, Rect } from "react-konva";
 import Konva from "konva";
 import type { TextPlacement } from "@/types/editor";
@@ -51,6 +51,17 @@ export function TextLayer({
     [onSelect]
   );
 
+  const [metrics, setMetrics] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    if (textRef.current) {
+      setMetrics({
+        w: textRef.current.width(),
+        h: textRef.current.height(),
+      });
+    }
+  }, [textPlacement.text, textPlacement.fontSize, textPlacement.width, textPlacement.fontStyle, textPlacement.fontFamily]);
+
   const showBorder = isSelected && !isEditing;
 
   return (
@@ -59,8 +70,8 @@ export function TextLayer({
         <Rect
           x={textPlacement.x - 6}
           y={textPlacement.y - 6}
-          width={(textPlacement.width ?? textRef.current?.width() ?? 120) + 12}
-          height={Math.max(textPlacement.fontSize * 1.4, 20) + 12}
+          width={metrics.w + 12}
+          height={metrics.h + 12}
           stroke="#3b82f6"
           strokeWidth={1}
           dash={[4, 4]}

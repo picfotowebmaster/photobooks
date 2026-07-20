@@ -80,7 +80,7 @@ export default function EditorPage() {
             scale={zoom}
           />
 
-          <EditorSidebar projectId={projectId} />
+          <EditorSidebar projectId={projectId} format={project.format} />
         </div>
 
         <div className="border-t border-neutral-200 bg-white px-4 py-2 flex items-center justify-end gap-2">

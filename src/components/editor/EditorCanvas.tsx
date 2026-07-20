@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useCallback, useState } from "react";
-import { Stage, Layer, Transformer } from "react-konva";
+import { Stage, Layer, Rect, Transformer } from "react-konva";
 import Konva from "konva";
 import { useEditorStore } from "@/stores/editorStore";
 import { PhotoLayer } from "./PhotoLayer";
@@ -43,12 +43,14 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
     updatePhotoPlacement,
     addPhotoToCanvas,
     pageBackgrounds,
+    templates,
     texts,
     selectedTextId,
     selectText,
     addText,
     updateText,
     removeText,
+    removePhoto,
     activeTool,
   } = useEditorStore();
 
@@ -158,7 +160,7 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
           y: pos.y,
           rotation: 0,
           text: "Escribe aquí",
-          fontSize: 24,
+          fontSize: 200,
           fontFamily: "Inter, sans-serif",
           fontStyle: "normal",
           fill: "#333333",
@@ -267,6 +269,14 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
         }
       }
 
+      if (state.selectedPhotoId) {
+        if (e.key === "Delete" || e.key === "Backspace") {
+          e.preventDefault();
+          transformerRef.current?.nodes([]);
+          state.removePhoto(state.selectedPhotoId);
+        }
+      }
+
       if (e.key === "Escape") {
         transformerRef.current?.nodes([]);
         state.selectText(null);
@@ -325,6 +335,21 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
               height={pageHeight}
               backgroundColor={pageBackgrounds[leftPage]}
             />
+            {templates[leftPage]?.slots.map((slot, i) => (
+              <Rect
+                key={`slot-left-${i}`}
+                x={slot.x}
+                y={slot.y}
+                width={slot.w}
+                height={slot.h}
+                fill="rgba(59,130,246,0.06)"
+                stroke="rgba(59,130,246,0.35)"
+                strokeWidth={1}
+                dash={[8, 4]}
+                listening={false}
+                perfectDrawEnabled={false}
+              />
+            ))}
             <BackgroundLayer
               pageIndex={rightPage}
               width={pageWidth}
@@ -332,6 +357,21 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
               x={rightPageX}
               backgroundColor={pageBackgrounds[rightPage]}
             />
+            {templates[rightPage]?.slots.map((slot, i) => (
+              <Rect
+                key={`slot-right-${i}`}
+                x={slot.x + rightPageX}
+                y={slot.y}
+                width={slot.w}
+                height={slot.h}
+                fill="rgba(59,130,246,0.06)"
+                stroke="rgba(59,130,246,0.35)"
+                strokeWidth={1}
+                dash={[8, 4]}
+                listening={false}
+                perfectDrawEnabled={false}
+              />
+            ))}
           </Layer>
 
           <Layer>
@@ -359,9 +399,10 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
                 isEditing={text.id === editingTextId}
                 onSelect={() => handleTextClick(text.id)}
                 onDragEnd={(x, y) => updateText(text.id, { x, y })}
-                onTransformEnd={(x, y, width, _height, _sx, _sy, rotation) =>
-                  updateText(text.id, { x, y, width, rotation })
-                }
+                onTransformEnd={(x, y, _width, _height, scaleX, _scaleY, rotation) => {
+                  const newFontSize = Math.max(8, Math.min(200, Math.round(text.fontSize * scaleX)));
+                  updateText(text.id, { x, y, fontSize: newFontSize, width: undefined, rotation });
+                }}
                 onDblClick={() => handleTextDblClick(text.id)}
                 transformerRef={transformerRef}
               />

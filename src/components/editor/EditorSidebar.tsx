@@ -3,16 +3,66 @@
 import { useCallback } from "react";
 import { useEditorStore } from "@/stores/editorStore";
 import { Dropzone } from "@/components/ui/Dropzone";
+import { TemplatePicker } from "./TemplatePicker";
 import { generateLowResPreview, getImageDimensions } from "@/lib/editor/imageProcessor";
+import { useTemplates } from "@/hooks/useTemplates";
+import { createClient } from "@/lib/supabase/client";
 import { v4 as uuid } from "uuid";
 import { toast } from "sonner";
+import type { PageTemplate } from "@/types/editor";
 
 interface EditorSidebarProps {
   projectId: string;
+  format: string;
 }
 
-export function EditorSidebar({ projectId }: EditorSidebarProps) {
-  const { currentPage, photos, addPhotoToCanvas } = useEditorStore();
+export function EditorSidebar({ projectId, format }: EditorSidebarProps) {
+  const {
+    currentPage,
+    photos,
+    templates,
+    addPhotoToCanvas,
+    setPageTemplate,
+    updatePhotoPlacement,
+  } = useEditorStore();
+
+  const { templates: dbTemplates, loading: templatesLoading } = useTemplates(format);
+
+  const handleTemplateSelect = useCallback(
+    async (template: PageTemplate) => {
+      setPageTemplate(currentPage, template);
+
+      const pagePhotos = photos.filter((p) => p.pageIndex === currentPage);
+      const count = Math.min(pagePhotos.length, template.slots.length);
+
+      for (let i = 0; i < count; i++) {
+        const slot = template.slots[i];
+        const photo = pagePhotos[i];
+        const scaleX = slot.w / photo.width;
+        const scaleY = slot.h / photo.height;
+        const scale = Math.min(scaleX, scaleY);
+
+        updatePhotoPlacement(photo.id, {
+          x: slot.x,
+          y: slot.y,
+          scaleX: scale,
+          scaleY: scale,
+          rotation: 0,
+        });
+      }
+
+      const supabase = createClient();
+      await supabase.from("project_pages").upsert(
+        {
+          project_id: projectId,
+          page_index: currentPage,
+          template_id: template.id,
+        },
+        { onConflict: "project_id, page_index" }
+      );
+    },
+    [currentPage, photos, projectId, setPageTemplate, updatePhotoPlacement]
+  );
 
   const handleFilesDrop = useCallback(
     async (files: File[]) => {
@@ -63,9 +113,31 @@ export function EditorSidebar({ projectId }: EditorSidebarProps) {
   );
 
   const pagePhotos = photos.filter((p) => p.pageIndex === currentPage);
+  const activeTemplate = templates[currentPage];
+
+  const pageTemplates: PageTemplate[] = dbTemplates.map((t) => ({
+    id: t.id,
+    name: t.name,
+    slots: t.slots as PageTemplate["slots"],
+  }));
 
   return (
     <aside className="w-72 border-l border-neutral-200 bg-white flex flex-col h-full">
+      <div className="p-4 border-b border-neutral-100">
+        <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+          Plantillas
+        </h3>
+        {templatesLoading ? (
+          <p className="text-xs text-neutral-400">Cargando...</p>
+        ) : (
+          <TemplatePicker
+            templates={pageTemplates}
+            selectedId={activeTemplate?.id ?? null}
+            onSelect={handleTemplateSelect}
+          />
+        )}
+      </div>
+
       <div className="p-4 border-b border-neutral-100">
         <h3 className="text-sm font-semibold text-neutral-900 mb-3">
           Añadir fotos
