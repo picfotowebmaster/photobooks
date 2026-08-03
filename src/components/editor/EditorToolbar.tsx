@@ -3,6 +3,7 @@
 import { useEditorStore } from "@/stores/editorStore";
 import { Button } from "@/components/ui/Button";
 import { TextStylePanel } from "./TextStylePanel";
+import { BackgroundColorPanel } from "./BackgroundColorPanel";
 import { cn } from "@/lib/utils/cn";
 import type { EditorTool } from "@/types/editor";
 
@@ -89,6 +90,7 @@ export function EditorToolbar() {
           onDelete={() => removeText(selectedTextPlacement.id)}
         />
       )}
+      {activeTool === "background" && <BackgroundColorPanel />}
     </>
   );
 }

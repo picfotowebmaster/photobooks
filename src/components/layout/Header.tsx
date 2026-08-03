@@ -4,9 +4,20 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import logo from "@/images/Logo-Pic-foto.png";
+import { useState, useEffect } from "react";
 
 export function Header() {
   const { user, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetch("/api/profile")
+        .then((r) => r.json())
+        .then((d) => setIsAdmin(d.data?.role === "admin"))
+        .catch(() => {});
+    }
+  }, [user]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/80 backdrop-blur">
@@ -21,6 +32,14 @@ export function Header() {
         <nav className="flex items-center gap-4">
           {user ? (
             <>
+              {isAdmin && (
+                <Link
+                  href="/admin/dashboard"
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/projects"
                 className="text-sm text-neutral-600 hover:text-neutral-900"
