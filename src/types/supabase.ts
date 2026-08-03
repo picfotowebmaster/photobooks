@@ -111,6 +111,41 @@ export interface Database {
           created_at?: string;
         };
       };
+      saved_cards: {
+        Row: {
+          id: string;
+          user_id: string;
+          card_brand: string;
+          last4: string;
+          exp_month: string;
+          exp_year: string;
+          cardholder_name: string;
+          is_default: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          card_brand: string;
+          last4: string;
+          exp_month: string;
+          exp_year: string;
+          cardholder_name: string;
+          is_default?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          card_brand?: string;
+          last4?: string;
+          exp_month?: string;
+          exp_year?: string;
+          cardholder_name?: string;
+          is_default?: boolean;
+          created_at?: string;
+        };
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

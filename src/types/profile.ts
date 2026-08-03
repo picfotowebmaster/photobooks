@@ -2,8 +2,9 @@ import type { Database } from "@/types/supabase";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
+type SavedCard = Database["public"]["Tables"]["saved_cards"]["Row"];
 
-export type { Profile, Address };
+export type { Profile, Address, SavedCard };
 
 export interface Invoice {
   id: string;

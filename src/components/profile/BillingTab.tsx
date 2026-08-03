@@ -44,8 +44,12 @@ export function BillingTab({ profile, onUpdate }: BillingTabProps) {
 
   useEffect(() => {
     fetch("/api/invoices")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Error cargando facturas");
+        return r.json();
+      })
       .then((d) => setInvoices(d.data || []))
+      .catch(() => setInvoices([]))
       .finally(() => setLoadingInvoices(false));
   }, []);
 
