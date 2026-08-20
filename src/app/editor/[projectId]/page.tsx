@@ -21,6 +21,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
 import { getPageDimensions } from "@/lib/editor/canvasConfig";
 import type { Project } from "@/types/project";
+import type { PageBackground } from "@/types/editor";
 
 export default function EditorPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -47,6 +48,32 @@ export default function EditorPage() {
       resetEditor();
     };
   }, [projectId, resetEditor]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    const supabase = createClient();
+    supabase
+      .from("project_pages")
+      .select("page_index, background_fill, background")
+      .eq("project_id", projectId)
+      .then(({ data: pages }) => {
+        const typedPages = pages as {
+          page_index: number;
+          background_fill: string | null;
+          background: PageBackground | null;
+        }[] | null;
+        if (!typedPages || typedPages.length === 0) return;
+        const backgrounds: Record<number, PageBackground> = {};
+        typedPages.forEach((p) => {
+          if (p.background) {
+            backgrounds[p.page_index] = p.background;
+          } else if (p.background_fill) {
+            backgrounds[p.page_index] = { type: "color", color: p.background_fill };
+          }
+        });
+        useEditorStore.getState().setPageBackgrounds(backgrounds);
+      });
+  }, [projectId]);
 
   if (loading) {
     return (

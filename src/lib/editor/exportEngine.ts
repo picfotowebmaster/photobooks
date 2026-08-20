@@ -1,7 +1,8 @@
 import JSZip from "jszip";
 import { jsPDF } from "jspdf";
 import { pxToMm } from "./coordinateMapper";
-import type { PageTemplate } from "@/types/editor";
+import { renderBackground } from "./backgroundExporter";
+import type { PageBackground } from "@/types/editor";
 
 interface ExportPage {
   photos: {
@@ -12,7 +13,7 @@ interface ExportPage {
     height: number;
     rotation: number;
   }[];
-  template: PageTemplate;
+  background: PageBackground;
 }
 
 interface ExportConfig {
@@ -23,7 +24,8 @@ interface ExportConfig {
 
 export async function exportToZip(
   config: ExportConfig,
-  highResImageFetcher: (photoId: string) => Promise<ArrayBuffer>
+  highResImageFetcher: (photoId: string) => Promise<ArrayBuffer>,
+  textureFetcher: (imagePath: string) => Promise<ArrayBuffer>
 ): Promise<Blob> {
   const zip = new JSZip();
 
@@ -33,31 +35,31 @@ export async function exportToZip(
     compress: true,
   });
 
+  const pageWmm = pxToMm(config.pageWidthPx);
+  const pageHmm = pxToMm(config.pageHeightPx);
+
   for (let i = 0; i < config.pages.length; i++) {
     const page = config.pages[i];
 
     if (i > 0) pdf.addPage();
 
-    if (page.template.backgroundColor) {
-      pdf.setFillColor(page.template.backgroundColor);
-      pdf.rect(
-        0,
-        0,
-        pxToMm(config.pageWidthPx),
-        pxToMm(config.pageHeightPx),
-        "F"
-      );
-    }
+    const bg = page.background;
+    const base = bg?.color;
 
-    if (page.template.backgroundUrl) {
-      pdf.addImage(
-        page.template.backgroundUrl,
-        "JPEG",
-        0,
-        0,
-        pxToMm(config.pageWidthPx),
-        pxToMm(config.pageHeightPx)
-      );
+    if (bg && bg.type === "color") {
+      if (base) {
+        pdf.setFillColor(base);
+        pdf.rect(0, 0, pageWmm, pageHmm, "F");
+      }
+    } else if (bg) {
+      if (base) {
+        pdf.setFillColor(base);
+        pdf.rect(0, 0, pageWmm, pageHmm, "F");
+      }
+      const rendered = await renderBackground(bg, config.pageWidthPx, config.pageHeightPx, textureFetcher);
+      if (rendered) {
+        pdf.addImage(rendered.dataUrl, rendered.format, 0, 0, pageWmm, pageHmm);
+      }
     }
 
     for (const photo of page.photos) {

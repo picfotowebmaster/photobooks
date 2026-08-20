@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useEditorStore } from "@/stores/editorStore";
 import type { Project } from "@/types/project";
-import type { PhotoPlacement, PageTemplate } from "@/types/editor";
+import type { PhotoPlacement, PageTemplate, PageBackground } from "@/types/editor";
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,17 +33,24 @@ export default function ProjectDetailPage() {
 
     supabase
       .from("project_pages")
-      .select("page_index, template_id, background_fill")
+      .select("page_index, template_id, background_fill, background")
       .eq("project_id", id)
       .order("page_index")
       .then(({ data: pages }) => {
-        const typedPages = pages as { page_index: number; background_fill: string | null; template_id: string | null }[] | null;
+        const typedPages = pages as {
+          page_index: number;
+          background_fill: string | null;
+          background: PageBackground | null;
+          template_id: string | null;
+        }[] | null;
         if (typedPages && typedPages.length > 0) {
           const store = useEditorStore.getState();
           store.setTotalPages(typedPages.length);
           typedPages.forEach((p) => {
-            if (p.background_fill) {
-              store.setPageBackground(p.page_index, p.background_fill);
+            if (p.background) {
+              store.setPageBackground(p.page_index, p.background);
+            } else if (p.background_fill) {
+              store.setPageBackground(p.page_index, { type: "color", color: p.background_fill });
             }
           });
         }

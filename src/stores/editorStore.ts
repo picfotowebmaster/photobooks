@@ -7,6 +7,7 @@ import type {
   PageTemplate,
   FontStyle,
   TextAlign,
+  PageBackground,
 } from "@/types/editor";
 
 interface EditorState {
@@ -19,7 +20,7 @@ interface EditorState {
   activeTool: EditorTool;
   zoom: number;
   templates: Record<number, PageTemplate>;
-  pageBackgrounds: Record<number, string>;
+  pageBackgrounds: Record<number, PageBackground>;
 
   setCurrentPage: (page: number) => void;
   setTotalPages: (count: number) => void;
@@ -30,7 +31,8 @@ interface EditorState {
   updatePhotoPlacement: (id: string, data: Partial<PhotoPlacement>) => void;
   removePhoto: (id: string) => void;
   setPageTemplate: (page: number, template: PageTemplate) => void;
-  setPageBackground: (page: number, color: string) => void;
+  setPageBackground: (page: number, background: PageBackground) => void;
+  setPageBackgrounds: (backgrounds: Record<number, PageBackground>) => void;
   resetEditor: () => void;
 
   addText: (text: Omit<TextPlacement, "id">) => void;
@@ -87,8 +89,11 @@ export const useEditorStore = create<EditorState>((set) => ({
   setPageTemplate: (page, template) =>
     set((s) => ({ templates: { ...s.templates, [page]: template } })),
 
-  setPageBackground: (page, color) =>
-    set((s) => ({ pageBackgrounds: { ...s.pageBackgrounds, [page]: color } })),
+  setPageBackground: (page, background) =>
+    set((s) => ({ pageBackgrounds: { ...s.pageBackgrounds, [page]: background } })),
+
+  setPageBackgrounds: (backgrounds) =>
+    set((s) => ({ pageBackgrounds: { ...s.pageBackgrounds, ...backgrounds } })),
 
   resetEditor: () => set(initialState),
 

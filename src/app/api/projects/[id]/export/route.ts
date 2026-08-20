@@ -4,12 +4,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { exportToZip } from "@/lib/editor/exportEngine";
 import { toExportCoords } from "@/lib/editor/coordinateMapper";
 import { getPageDimensions } from "@/lib/editor/canvasConfig";
+import type { PageBackground } from "@/types/editor";
 
 type DbPage = {
   id: string;
   project_id: string;
   page_index: number;
   background_fill: string | null;
+  background: PageBackground | null;
 };
 
 export async function POST(
@@ -93,12 +95,11 @@ export async function POST(
 
     exportPages.push({
       photos: coords,
-      template: {
-        id: "",
-        name: "",
-        slots: [],
-        backgroundColor: page.background_fill ?? undefined,
-      },
+      background:
+        page.background ??
+        (page.background_fill
+          ? { type: "color", color: page.background_fill }
+          : { type: "color", color: "#ffffff" }),
     });
   }
 
@@ -110,6 +111,14 @@ export async function POST(
     return data.arrayBuffer();
   };
 
+  const textureFetcher = async (imagePath: string) => {
+    const { data } = await admin.storage
+      .from("textures")
+      .download(imagePath);
+    if (!data) throw new Error(`Failed to fetch texture ${imagePath}`);
+    return data.arrayBuffer();
+  };
+
   const dims = getPageDimensions(project.format as "10x10" | "8.5x11" | "8x10");
 
   const zipBlob = await exportToZip(
@@ -118,7 +127,8 @@ export async function POST(
       pageWidthPx: dims.w,
       pageHeightPx: dims.h,
     },
-    highResFetcher
+    highResFetcher,
+    textureFetcher
   );
 
   const filePath = `${user.id}/${id}/export_${Date.now()}.zip`;

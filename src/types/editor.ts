@@ -43,6 +43,19 @@ export interface PageTemplate {
   backgroundColor?: string;
 }
 
+export type BackgroundFill = "tile" | "stretch";
+
+export interface PageBackground {
+  type: "color" | "pattern" | "image";
+  color?: string;
+  patternId?: string;
+  imageUrl?: string;
+  imagePath?: string;
+  mode?: BackgroundFill;
+  tintBase?: string;
+  tintAccent?: string;
+}
+
 export interface CanvasConfig {
   pageWidth: number;
   pageHeight: number;

@@ -330,10 +330,9 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
         >
           <Layer>
             <BackgroundLayer
-              pageIndex={leftPage}
               width={pageWidth}
               height={pageHeight}
-              backgroundColor={pageBackgrounds[leftPage]}
+              background={pageBackgrounds[leftPage]}
             />
             {templates[leftPage]?.slots.map((slot, i) => (
               <Rect
@@ -351,11 +350,10 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
               />
             ))}
             <BackgroundLayer
-              pageIndex={rightPage}
               width={pageWidth}
               height={pageHeight}
               x={rightPageX}
-              backgroundColor={pageBackgrounds[rightPage]}
+              background={pageBackgrounds[rightPage]}
             />
             {templates[rightPage]?.slots.map((slot, i) => (
               <Rect
