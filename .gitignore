@@ -45,3 +45,9 @@ supabase/.branches/
 *.pem
 coverage/
 .nyc_output/
+
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Tests
+test-results/
