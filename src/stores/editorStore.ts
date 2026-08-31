@@ -3,12 +3,14 @@ import { v4 as uuid } from "uuid";
 import type {
   PhotoPlacement,
   TextPlacement,
+  StickerPlacement,
   EditorTool,
   PageTemplate,
   FontStyle,
   TextAlign,
   PageBackground,
 } from "@/types/editor";
+import { DEFAULT_GRID_CONFIG, type GridConfig } from "@/lib/editor/gridConfig";
 
 interface EditorState {
   currentPage: number;
@@ -17,14 +19,20 @@ interface EditorState {
   selectedPhotoId: string | null;
   texts: TextPlacement[];
   selectedTextId: string | null;
+  stickers: StickerPlacement[];
+  selectedStickerId: string | null;
+  activeStickerId: string | null;
   activeTool: EditorTool;
   zoom: number;
   templates: Record<number, PageTemplate>;
   pageBackgrounds: Record<number, PageBackground>;
+  gridConfig: GridConfig;
 
   setCurrentPage: (page: number) => void;
   setTotalPages: (count: number) => void;
   selectPhoto: (id: string | null) => void;
+  selectSticker: (id: string | null) => void;
+  setActiveStickerId: (id: string | null) => void;
   setActiveTool: (tool: EditorTool) => void;
   setZoom: (zoom: number) => void;
   addPhotoToCanvas: (photo: PhotoPlacement) => void;
@@ -33,12 +41,18 @@ interface EditorState {
   setPageTemplate: (page: number, template: PageTemplate) => void;
   setPageBackground: (page: number, background: PageBackground) => void;
   setPageBackgrounds: (backgrounds: Record<number, PageBackground>) => void;
+  setGridConfig: (config: Partial<GridConfig>) => void;
+  toggleGridVisibility: (key: 'showBleed' | 'showSafeZone' | 'showGrid' | 'showSpine') => void;
   resetEditor: () => void;
 
   addText: (text: Omit<TextPlacement, "id">) => void;
   updateText: (id: string, data: Partial<TextPlacement>) => void;
   removeText: (id: string) => void;
   selectText: (id: string | null) => void;
+
+  addSticker: (sticker: Omit<StickerPlacement, "id">) => void;
+  updateSticker: (id: string, data: Partial<StickerPlacement>) => void;
+  removeSticker: (id: string) => void;
 }
 
 const initialState = {
@@ -48,10 +62,14 @@ const initialState = {
   selectedPhotoId: null,
   texts: [],
   selectedTextId: null,
+  stickers: [],
+  selectedStickerId: null,
+  activeStickerId: null,
   activeTool: "select" as EditorTool,
   zoom: 1,
   templates: {},
   pageBackgrounds: {},
+  gridConfig: DEFAULT_GRID_CONFIG,
 };
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -66,7 +84,12 @@ export const useEditorStore = create<EditorState>((set) => ({
   },
 
   selectPhoto: (id) =>
-    set({ selectedPhotoId: id, selectedTextId: null }),
+    set({ selectedPhotoId: id, selectedTextId: null, selectedStickerId: null }),
+
+  selectSticker: (id) =>
+    set({ selectedStickerId: id, selectedPhotoId: null, selectedTextId: null, activeTool: "select" }),
+
+  setActiveStickerId: (id) => set({ activeStickerId: id }),
 
   setActiveTool: (tool) => set({ activeTool: tool }),
 
@@ -95,6 +118,12 @@ export const useEditorStore = create<EditorState>((set) => ({
   setPageBackgrounds: (backgrounds) =>
     set((s) => ({ pageBackgrounds: { ...s.pageBackgrounds, ...backgrounds } })),
 
+  setGridConfig: (config) =>
+    set((s) => ({ gridConfig: { ...s.gridConfig, ...config } })),
+
+  toggleGridVisibility: (key) =>
+    set((s) => ({ gridConfig: { ...s.gridConfig, [key]: !s.gridConfig[key] } })),
+
   resetEditor: () => set(initialState),
 
   addText: (textData) => {
@@ -120,5 +149,28 @@ export const useEditorStore = create<EditorState>((set) => ({
     })),
 
   selectText: (id) =>
-    set({ selectedTextId: id, selectedPhotoId: null, activeTool: "select" }),
+    set({ selectedTextId: id, selectedPhotoId: null, selectedStickerId: null, activeTool: "select" }),
+
+  addSticker: (stickerData) => {
+    const id = uuid();
+    const placement: StickerPlacement = { id, ...stickerData };
+    set((s) => ({
+      stickers: [...s.stickers, placement],
+      selectedStickerId: id,
+      selectedPhotoId: null,
+      selectedTextId: null,
+      activeTool: "select",
+    }));
+  },
+
+  updateSticker: (id, data) =>
+    set((s) => ({
+      stickers: s.stickers.map((st) => (st.id === id ? { ...st, ...data } : st)),
+    })),
+
+  removeSticker: (id) =>
+    set((s) => ({
+      stickers: s.stickers.filter((st) => st.id !== id),
+      selectedStickerId: s.selectedStickerId === id ? null : s.selectedStickerId,
+    })),
 }));

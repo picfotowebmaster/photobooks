@@ -1,16 +1,20 @@
 "use client";
 
+import { useState } from "react";
+
 import { useEditorStore } from "@/stores/editorStore";
 import { Button } from "@/components/ui/Button";
 import { TextStylePanel } from "./TextStylePanel";
 import { BackgroundPanel } from "./BackgroundPanel";
+import { StickerPicker } from "./StickerPicker";
+import { GridPanel } from "./GridPanel";
 import { cn } from "@/lib/utils/cn";
 import type { EditorTool } from "@/types/editor";
 
 const tools: { id: EditorTool; label: string; icon: string }[] = [
-  { id: "select", label: "Seleccionar", icon: "⊹" },
   { id: "text", label: "Texto", icon: "T" },
   { id: "background", label: "Fondo", icon: "▣" },
+  { id: "sticker", label: "Stickers", icon: "★" },
 ];
 
 export function EditorToolbar() {
@@ -25,7 +29,11 @@ export function EditorToolbar() {
     texts,
     updateText,
     removeText,
+    activeStickerId,
+    setActiveStickerId,
   } = useEditorStore();
+
+  const [showGrid, setShowGrid] = useState(false);
 
   const currentSpread = Math.floor(currentPage / 2) + 1;
   const totalSpreads = totalPages / 2;
@@ -80,6 +88,22 @@ export function EditorToolbar() {
           <Button variant="ghost" size="sm" onClick={() => setZoom(1)}>
             Ajustar
           </Button>
+
+          <div className="w-px h-5 bg-neutral-200 mx-1" />
+
+          <button
+            onClick={() => setShowGrid((v) => !v)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+              showGrid
+                ? "bg-cyan-600 text-white"
+                : "text-neutral-600 hover:bg-neutral-100"
+            )}
+            title="Retícula"
+          >
+            <span className="text-base">⊞</span>
+            <span className="hidden sm:inline">Retícula</span>
+          </button>
         </div>
       </div>
 
@@ -91,6 +115,15 @@ export function EditorToolbar() {
         />
       )}
       {activeTool === "background" && <BackgroundPanel />}
+      {activeTool === "sticker" && (
+        <div className="border-b border-neutral-200 bg-neutral-50 p-3">
+          <StickerPicker
+            selectedId={activeStickerId}
+            onSelect={setActiveStickerId}
+          />
+        </div>
+      )}
+      {showGrid && <GridPanel />}
     </>
   );
 }

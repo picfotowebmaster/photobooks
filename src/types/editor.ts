@@ -1,4 +1,4 @@
-export type EditorTool = "select" | "text" | "background";
+export type EditorTool = "select" | "text" | "background" | "sticker" | "zoom";
 
 export type FontStyle = "normal" | "bold" | "italic" | "bold italic";
 
@@ -35,6 +35,20 @@ export interface PhotoPlacement {
   highResUrl: string;
 }
 
+export interface StickerPlacement {
+  id: string;
+  stickerId: string;
+  pageIndex: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scaleX: number;
+  scaleY: number;
+  rotation: number;
+  zIndex: number;
+}
+
 export interface PageTemplate {
   id: string;
   name: string;
@@ -64,3 +78,5 @@ export interface CanvasConfig {
   minScale: number;
   stepScale: number;
 }
+
+export type { GridConfig } from "@/lib/editor/gridConfig";

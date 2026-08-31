@@ -6,8 +6,12 @@ import Konva from "konva";
 import { useEditorStore } from "@/stores/editorStore";
 import { PhotoLayer } from "./PhotoLayer";
 import { TextLayer } from "./TextLayer";
+import { StickerLayer } from "./StickerLayer";
 import { TextEditPanel } from "./TextEditPanel";
 import { BackgroundLayer } from "./BackgroundLayer";
+import { GridOverlay } from "./GridOverlay";
+import { CanvasToolbar } from "./CanvasToolbar";
+import { getStickerById } from "@/types/sticker";
 import {
   getSpreadPages,
   getSpreadCanvasWidth,
@@ -51,7 +55,15 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
     updateText,
     removeText,
     removePhoto,
+    stickers,
+    selectedStickerId,
+    selectSticker,
+    addSticker,
+    updateSticker,
+    removeSticker,
+    activeStickerId,
     activeTool,
+    gridConfig,
   } = useEditorStore();
 
   const [leftPage, rightPage] = getSpreadPages(currentPage);
@@ -148,6 +160,47 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
         return;
       }
 
+      // Zoom tool: click = zoom in, shift+click = zoom out
+      if (activeTool === "zoom") {
+        const currentZoom = useEditorStore.getState().zoom;
+        if (e.evt.shiftKey) {
+          useEditorStore.getState().setZoom(Math.max(0.2, +(currentZoom - 0.1).toFixed(1)));
+        } else {
+          useEditorStore.getState().setZoom(Math.min(2, +(currentZoom + 0.1).toFixed(1)));
+        }
+        return;
+      }
+
+      if (activeTool === "sticker") {
+        const def = getStickerById(activeStickerId ?? undefined);
+        if (!def) return;
+
+        const pos = e.target.getStage()?.getPointerPosition();
+        if (!pos) return;
+
+        const { pageIndex, adjustedX } = pageForX(pos.x);
+
+        const img = new window.Image();
+        img.src = def.imagePath;
+        img.onload = () => {
+          const max = 200;
+          const ratio = Math.min(max / img.naturalWidth, max / img.naturalHeight);
+          addSticker({
+            stickerId: def.id,
+            pageIndex,
+            x: adjustedX,
+            y: pos.y,
+            width: Math.round(img.naturalWidth * ratio),
+            height: Math.round(img.naturalHeight * ratio),
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            zIndex: useEditorStore.getState().stickers.length,
+          });
+        };
+        return;
+      }
+
       if (activeTool === "text") {
         const pos = e.target.getStage()?.getPointerPosition();
         if (!pos) return;
@@ -170,9 +223,21 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
         transformerRef.current?.nodes([]);
         selectPhoto(null);
         selectText(null);
+        selectSticker(null);
       }
     },
-    [activeTool, editingTextId, pageForX, addText, selectPhoto, selectText, handleTextEditSave]
+    [
+      activeTool,
+      editingTextId,
+      pageForX,
+      addText,
+      addSticker,
+      activeStickerId,
+      selectPhoto,
+      selectText,
+      selectSticker,
+      handleTextEditSave,
+    ]
   );
 
   const handleTextClick = useCallback(
@@ -277,10 +342,34 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
         }
       }
 
+      if (state.selectedStickerId) {
+        if (e.key === "Delete" || e.key === "Backspace") {
+          e.preventDefault();
+          transformerRef.current?.nodes([]);
+          state.removeSticker(state.selectedStickerId);
+        }
+      }
+
       if (e.key === "Escape") {
         transformerRef.current?.nodes([]);
         state.selectText(null);
         state.selectPhoto(null);
+        state.selectSticker(null);
+        if (state.activeTool === "zoom") state.setActiveTool("select");
+      }
+
+      // Keyboard shortcuts for tools
+      if (!state.selectedTextId && !state.selectedPhotoId && !state.selectedStickerId) {
+        if (e.key === "v" || e.key === "V") {
+          e.preventDefault();
+          state.setActiveTool("select");
+        }
+        if (e.key === "z" || e.key === "Z") {
+          if (!e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            state.setActiveTool("zoom");
+          }
+        }
       }
     };
 
@@ -312,131 +401,170 @@ export function EditorCanvas({ pageWidth, pageHeight, scale }: EditorCanvasProps
     (t) => t.pageIndex === leftPage || t.pageIndex === rightPage
   );
 
+  const spreadStickers = stickers.filter(
+    (s) => s.pageIndex === leftPage || s.pageIndex === rightPage
+  );
+
   return (
-    <div ref={containerRef} className="flex items-center justify-center overflow-auto bg-neutral-200 min-w-0 flex-1 relative">
-      {ready && (
-        <>
-        <Stage
-          ref={stageRef}
-          width={stageSize.w}
-          height={stageSize.h}
-          scaleX={baseScale * scale}
-          scaleY={baseScale * scale}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onClick={handleStageClick}
-          className="shadow-2xl"
-          style={{ background: "rgb(229, 229, 229)" }}
-        >
-          <Layer>
-            <BackgroundLayer
-              width={pageWidth}
-              height={pageHeight}
-              background={pageBackgrounds[leftPage]}
-            />
-            {templates[leftPage]?.slots.map((slot, i) => (
-              <Rect
-                key={`slot-left-${i}`}
-                x={slot.x}
-                y={slot.y}
-                width={slot.w}
-                height={slot.h}
-                fill="rgba(59,130,246,0.06)"
-                stroke="rgba(59,130,246,0.35)"
-                strokeWidth={1}
-                dash={[8, 4]}
-                listening={false}
-                perfectDrawEnabled={false}
-              />
-            ))}
-            <BackgroundLayer
-              width={pageWidth}
-              height={pageHeight}
-              x={rightPageX}
-              background={pageBackgrounds[rightPage]}
-            />
-            {templates[rightPage]?.slots.map((slot, i) => (
-              <Rect
-                key={`slot-right-${i}`}
-                x={slot.x + rightPageX}
-                y={slot.y}
-                width={slot.w}
-                height={slot.h}
-                fill="rgba(59,130,246,0.06)"
-                stroke="rgba(59,130,246,0.35)"
-                strokeWidth={1}
-                dash={[8, 4]}
-                listening={false}
-                perfectDrawEnabled={false}
-              />
-            ))}
-          </Layer>
-
-          <Layer>
-            {spreadPhotos.map((photo) => (
-              <PhotoLayer
-                key={photo.id}
-                photo={photo}
-                isSelected={photo.id === selectedPhotoId}
-                onSelect={() => selectPhoto(photo.id)}
-                onDragEnd={(x, y) =>
-                  updatePhotoPlacement(photo.id, { x, y })
-                }
-                onTransformEnd={(x, y, scaleX, scaleY, rotation) =>
-                  updatePhotoPlacement(photo.id, { x, y, scaleX, scaleY, rotation })
-                }
-                transformerRef={transformerRef}
-              />
-            ))}
-
-            {spreadTexts.map((text) => (
-              <TextLayer
-                key={text.id}
-                textPlacement={text}
-                isSelected={text.id === selectedTextId}
-                isEditing={text.id === editingTextId}
-                onSelect={() => handleTextClick(text.id)}
-                onDragEnd={(x, y) => updateText(text.id, { x, y })}
-                onTransformEnd={(x, y, _width, _height, scaleX, _scaleY, rotation) => {
-                  const newFontSize = Math.max(8, Math.min(200, Math.round(text.fontSize * scaleX)));
-                  updateText(text.id, { x, y, fontSize: newFontSize, width: undefined, rotation });
-                }}
-                onDblClick={() => handleTextDblClick(text.id)}
-                transformerRef={transformerRef}
-              />
-            ))}
-
-            <Transformer
-              ref={transformerRef}
-              rotateEnabled={true}
-              enabledAnchors={[
-                "top-left",
-                "top-right",
-                "bottom-left",
-                "bottom-right",
-              ]}
-              boundBoxFunc={(oldBox, newBox) => {
-                if (newBox.width < 30 || newBox.height < 30) return oldBox;
-                return newBox;
-              }}
-            />
-          </Layer>
-        </Stage>
-
-        {editingTextPlacement && editPanelPos && (
-          <div
-            className="absolute z-40"
-            style={{ left: `${editPanelPos.left}px`, top: `${editPanelPos.top}px` }}
+    <div
+      ref={containerRef}
+      className="min-w-0 min-h-0 flex-1 relative"
+      style={{ cursor: activeTool === "zoom" ? "zoom-in" : undefined }}
+    >
+      {/* Scroll container — absolute so it never pushes the flex siblings */}
+      <div className="absolute inset-0 overflow-auto bg-neutral-200">
+        {/* Centering wrapper — centers Stage when small, scrolls when large */}
+        <div className="flex items-center justify-center" style={{ minWidth: '100%', minHeight: '100%' }}>
+        {ready && (
+          <Stage
+            ref={stageRef}
+            width={Math.round(stageSize.w * scale)}
+            height={Math.round(stageSize.h * scale)}
+            scaleX={baseScale * scale}
+            scaleY={baseScale * scale}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onClick={handleStageClick}
+            className="shadow-2xl shrink-0"
+            style={{ background: "rgb(229, 229, 229)" }}
           >
-            <TextEditPanel
-              textPlacement={editingTextPlacement}
-              onSave={handleTextEditSave}
-              onCancel={handleTextEditCancel}
-            />
-          </div>
+            <Layer>
+              <BackgroundLayer
+                width={pageWidth}
+                height={pageHeight}
+                background={pageBackgrounds[leftPage]}
+              />
+              {templates[leftPage]?.slots.map((slot, i) => (
+                <Rect
+                  key={`slot-left-${i}`}
+                  x={slot.x}
+                  y={slot.y}
+                  width={slot.w}
+                  height={slot.h}
+                  fill="rgba(59,130,246,0.06)"
+                  stroke="rgba(59,130,246,0.35)"
+                  strokeWidth={1}
+                  dash={[8, 4]}
+                  listening={false}
+                  perfectDrawEnabled={false}
+                />
+              ))}
+              <BackgroundLayer
+                width={pageWidth}
+                height={pageHeight}
+                x={rightPageX}
+                background={pageBackgrounds[rightPage]}
+              />
+              {templates[rightPage]?.slots.map((slot, i) => (
+                <Rect
+                  key={`slot-right-${i}`}
+                  x={slot.x + rightPageX}
+                  y={slot.y}
+                  width={slot.w}
+                  height={slot.h}
+                  fill="rgba(59,130,246,0.06)"
+                  stroke="rgba(59,130,246,0.35)"
+                  strokeWidth={1}
+                  dash={[8, 4]}
+                  listening={false}
+                  perfectDrawEnabled={false}
+                />
+              ))}
+            </Layer>
+
+            {/* ── Grid overlay (non-interactive) ─── */}
+            <Layer listening={false}>
+              <GridOverlay
+                pageWidth={pageWidth}
+                pageHeight={pageHeight}
+                gridConfig={gridConfig}
+                rightPageX={rightPageX}
+              />
+            </Layer>
+
+            <Layer>
+              {spreadPhotos.map((photo) => (
+                <PhotoLayer
+                  key={photo.id}
+                  photo={photo}
+                  isSelected={photo.id === selectedPhotoId}
+                  onSelect={() => selectPhoto(photo.id)}
+                  onDragEnd={(x, y) =>
+                    updatePhotoPlacement(photo.id, { x, y })
+                  }
+                  onTransformEnd={(x, y, scaleX, scaleY, rotation) =>
+                    updatePhotoPlacement(photo.id, { x, y, scaleX, scaleY, rotation })
+                  }
+                  transformerRef={transformerRef}
+                />
+              ))}
+
+              {spreadTexts.map((text) => (
+                <TextLayer
+                  key={text.id}
+                  textPlacement={text}
+                  isSelected={text.id === selectedTextId}
+                  isEditing={text.id === editingTextId}
+                  onSelect={() => handleTextClick(text.id)}
+                  onDragEnd={(x, y) => updateText(text.id, { x, y })}
+                  onTransformEnd={(x, y, _width, _height, scaleX, _scaleY, rotation) => {
+                    const newFontSize = Math.max(8, Math.min(200, Math.round(text.fontSize * scaleX)));
+                    updateText(text.id, { x, y, fontSize: newFontSize, width: undefined, rotation });
+                  }}
+                  onDblClick={() => handleTextDblClick(text.id)}
+                  transformerRef={transformerRef}
+                />
+              ))}
+
+              {spreadStickers.map((sticker) => (
+                <StickerLayer
+                  key={sticker.id}
+                  sticker={sticker}
+                  isSelected={sticker.id === selectedStickerId}
+                  onSelect={() => selectSticker(sticker.id)}
+                  onDragEnd={(x, y) => updateSticker(sticker.id, { x, y })}
+                  onTransformEnd={(x, y, scaleX, scaleY, rotation) =>
+                    updateSticker(sticker.id, { x, y, scaleX, scaleY, rotation })
+                  }
+                  transformerRef={transformerRef}
+                />
+              ))}
+
+              <Transformer
+                ref={transformerRef}
+                rotateEnabled={true}
+                enabledAnchors={[
+                  "top-left",
+                  "top-right",
+                  "bottom-left",
+                  "bottom-right",
+                ]}
+                boundBoxFunc={(oldBox, newBox) => {
+                  if (newBox.width < 30 || newBox.height < 30) return oldBox;
+                  return newBox;
+                }}
+              />
+            </Layer>
+          </Stage>
         )}
-        </>
+        </div>
+      </div>
+
+      {/* ── Fixed overlays (stay in place regardless of scroll/zoom) ── */}
+      {ready && editingTextPlacement && editPanelPos && (
+        <div
+          className="absolute z-40"
+          style={{ left: `${editPanelPos.left}px`, top: `${editPanelPos.top}px` }}
+        >
+          <TextEditPanel
+            textPlacement={editingTextPlacement}
+            onSave={handleTextEditSave}
+            onCancel={handleTextEditCancel}
+          />
+        </div>
       )}
+
+      {ready && <CanvasToolbar />}
     </div>
   );
 }
