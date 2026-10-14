@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getStripe, isStripeEnabled } from "@/lib/stripe";
 import { getPricingConfig } from "@/lib/pricing/config";
 import { calculatePricing, validatePageCount } from "@/lib/pricing/calculator";
 import { isProjectFormat } from "@/lib/editor/formats";
@@ -68,6 +68,13 @@ export async function POST(
     );
   }
 
+  if (!isStripeEnabled()) {
+    return NextResponse.json(
+      { error: "Los pagos no están disponibles temporalmente" },
+      { status: 503 }
+    );
+  }
+
   const { error: orderError } = await supabase
     .from("orders")
     .upsert(
@@ -88,16 +95,7 @@ export async function POST(
     return NextResponse.json({ error: orderError.message }, { status: 500 });
   }
 
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return NextResponse.json(
-      { error: "Stripe no está configurado" },
-      { status: 500 }
-    );
-  }
-
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-03-31.basil" as Stripe.LatestApiVersion,
-  });
+  const stripe = getStripe();
 
   const origin =
     process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;

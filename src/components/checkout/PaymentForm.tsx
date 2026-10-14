@@ -19,6 +19,7 @@ export function PaymentForm({
   coverType,
 }: PaymentFormProps) {
   const [loading, setLoading] = useState(false);
+  const stripeEnabled = process.env.NEXT_PUBLIC_STRIPE_ENABLED === "true";
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -47,8 +48,18 @@ export function PaymentForm({
           {total.toFixed(2)} {currency}
         </span>
       </div>
-      <Button onClick={handleCheckout} disabled={loading} className="w-full" size="lg">
-        {loading ? "Redirigiendo..." : "Pagar con Stripe"}
+      {!stripeEnabled && (
+        <p className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+          Pagos temporalmente no disponibles.
+        </p>
+      )}
+      <Button
+        onClick={handleCheckout}
+        disabled={loading || !stripeEnabled}
+        className="w-full"
+        size="lg"
+      >
+        {!stripeEnabled ? "Pagos no disponibles" : loading ? "Redirigiendo..." : "Pagar con Stripe"}
       </Button>
     </div>
   );
