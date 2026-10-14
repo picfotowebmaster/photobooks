@@ -89,7 +89,7 @@ export function generateReceiptPDF(data: ReceiptData): Buffer {
   y += 5;
   doc.text(`Formato: ${data.format}`, margin, y);
   y += 5;
-  doc.text(`Tapa: ${data.coverType === "hard" ? "Dura" : "Blanda"}`, margin, y);
+  doc.text(`Tapa: ${data.coverType || "—"}`, margin, y);
   y += 5;
   doc.text(`Páginas: ${data.totalPages}`, margin, y);
 
@@ -117,13 +117,12 @@ export function generateReceiptPDF(data: ReceiptData): Buffer {
     y += 5;
   };
 
-  addRow(`Precio base (10 páginas)`, fmtMxn(data.basePrice));
+  addRow(`Precio base`, fmtMxn(data.basePrice));
   if (data.extraPagesCost > 0) {
-    const extraPages = data.totalPages - 10;
-    addRow(`Páginas extra (${extraPages})`, fmtMxn(data.extraPagesCost));
+    addRow(`Páginas/spreads extra`, fmtMxn(data.extraPagesCost));
   }
   if (data.coverSurcharge > 0) {
-    addRow(`Tapa dura`, fmtMxn(data.coverSurcharge));
+    addRow(`Tapa`, fmtMxn(data.coverSurcharge));
   }
 
   y += 2;

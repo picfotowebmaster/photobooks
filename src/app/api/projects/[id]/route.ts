@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { isProjectFormat } from "@/lib/editor/formats";
 
 export async function GET(
   _request: NextRequest,
@@ -36,6 +37,10 @@ export async function PATCH(
   }
 
   const body = await request.json();
+
+  if (body.format !== undefined && !isProjectFormat(body.format)) {
+    return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
+  }
 
   const { data, error } = await supabase
     .from("projects")

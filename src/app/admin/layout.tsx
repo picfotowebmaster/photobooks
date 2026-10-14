@@ -1,5 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
-import { AdminHeader } from "@/components/layout/AdminHeader";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { redirect } from "next/navigation";
 
@@ -23,7 +23,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen flex flex-col">
-      <AdminHeader />
+      <AppHeader variant="admin" />
       <div className="flex flex-1">
         <AdminSidebar />
         <main className="flex-1 p-6 bg-neutral-50">{children}</main>

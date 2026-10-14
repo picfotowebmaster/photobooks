@@ -1,4 +1,5 @@
 import { mmToPx } from "./coordinateMapper";
+import { DEFAULT_FORMAT, getFormat, resolveFormat } from "./formats";
 
 /* ── Grid configuration types ─────────────────────────────── */
 
@@ -18,16 +19,25 @@ export interface GridConfig {
   showSpine: boolean;
 }
 
-export const DEFAULT_GRID_CONFIG: GridConfig = {
-  bleedMm: 3,
-  safeMarginMm: 10,
-  columns: 3,
-  rows: 2,
-  showBleed: true,
-  showSafeZone: true,
-  showGrid: true,
-  showSpine: true,
-};
+/**
+ * Build the default grid for a given book format.
+ * Column/row counts depend on the orientation and the safe margin scales
+ * with the format size, so the reticle adapts to every format.
+ */
+export function getDefaultGridConfig(
+  format: string | null | undefined
+): GridConfig {
+  const { defaultGrid } = getFormat(resolveFormat(format));
+  return {
+    ...defaultGrid,
+    showBleed: true,
+    showSafeZone: true,
+    showGrid: true,
+    showSpine: true,
+  };
+}
+
+export const DEFAULT_GRID_CONFIG: GridConfig = getDefaultGridConfig(DEFAULT_FORMAT);
 
 /* ── Preset library ───────────────────────────────────────── */
 

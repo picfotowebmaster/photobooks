@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { exportToZip } from "@/lib/editor/exportEngine";
-import { toExportCoords } from "@/lib/editor/coordinateMapper";
-import { getPageDimensions } from "@/lib/editor/canvasConfig";
+import { toExportCoords, mmToPx } from "@/lib/editor/coordinateMapper";
+import { getPageDimensions, SPREAD_GAP_PX } from "@/lib/editor/canvasConfig";
+import { TEMPLATE_BLEED_MM } from "@/lib/editor/templateCatalog";
 import type { PageBackground } from "@/types/editor";
 
 type DbPage = {
@@ -68,7 +69,15 @@ export async function POST(
     return NextResponse.json({ error: "No se encontraron páginas" }, { status: 400 });
   }
 
-  const exportPages = [];
+  const exportPages = new Map<
+    number,
+    {
+      photos: ReturnType<typeof toExportCoords>;
+      background: PageBackground;
+    }
+  >();
+  /** Map photos.id → storage path (bucket_path_highres). */
+  const pathByPhotoId = new Map<string, string>();
 
   for (const page of pages) {
     const { data: placementsRaw } = await supabase
@@ -78,11 +87,20 @@ export async function POST(
 
     const placements = placementsRaw as Record<string, unknown>[] | null;
 
+    for (const p of placements || []) {
+      const photo = (p as { photos?: { bucket_path_highres?: string } | null })
+        .photos;
+      const photoId = p.photo_id as string;
+      if (photo?.bucket_path_highres) {
+        pathByPhotoId.set(photoId, photo.bucket_path_highres);
+      }
+    }
+
     const coords = toExportCoords(
       (placements || []).map((p) => ({
         id: p.id as string,
         photoId: p.photo_id as string,
-        highResUrl: (p as Record<string, unknown>).highResUrl as string,
+        highResUrl: "",
         x: p.x as number,
         y: p.y as number,
         width: p.width as number,
@@ -93,7 +111,7 @@ export async function POST(
       }))
     );
 
-    exportPages.push({
+    exportPages.set(page.page_index, {
       photos: coords,
       background:
         page.background ??
@@ -103,11 +121,33 @@ export async function POST(
     });
   }
 
+  const blankPage = {
+    photos: [] as ReturnType<typeof toExportCoords>,
+    background: { type: "color", color: "#ffffff" } as PageBackground,
+  };
+  const maxIndex = exportPages.size
+    ? Math.max(...Array.from(exportPages.keys()))
+    : -1;
+  const totalPages = Math.max(
+    project.total_pages ?? 0,
+    maxIndex + 1,
+    0
+  );
+  const spreads = [];
+  for (let i = 0; i < totalPages; i += 2) {
+    spreads.push({
+      left: exportPages.get(i) ?? blankPage,
+      right: exportPages.get(i + 1) ?? blankPage,
+    });
+  }
+
   const highResFetcher = async (photoId: string) => {
+    const path = pathByPhotoId.get(photoId);
+    if (!path) throw new Error(`No storage path for photo ${photoId}`);
     const { data } = await admin.storage
       .from("photos_highres")
-      .download(photoId);
-    if (!data) throw new Error(`Failed to fetch photo ${photoId}`);
+      .download(path);
+    if (!data) throw new Error(`Failed to fetch photo ${path}`);
     return data.arrayBuffer();
   };
 
@@ -119,13 +159,15 @@ export async function POST(
     return data.arrayBuffer();
   };
 
-  const dims = getPageDimensions(project.format as "10x10" | "8.5x11" | "8x10");
+  const dims = getPageDimensions(project.format);
 
   const zipBlob = await exportToZip(
     {
-      pages: exportPages,
+      spreads,
       pageWidthPx: dims.w,
       pageHeightPx: dims.h,
+      bleedPx: mmToPx(TEMPLATE_BLEED_MM),
+      gapPx: SPREAD_GAP_PX,
     },
     highResFetcher,
     textureFetcher

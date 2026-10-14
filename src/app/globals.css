@@ -13,3 +13,19 @@
       "Helvetica Neue", Arial, sans-serif;
   }
 }
+
+@layer utilities {
+  .editor-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .editor-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .editor-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+  }
+}

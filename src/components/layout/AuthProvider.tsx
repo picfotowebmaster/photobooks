@@ -7,18 +7,23 @@ import { createClient } from "@/lib/supabase/client";
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  role: string | null;
+  isAdmin: boolean;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  role: null,
+  isAdmin: false,
   signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -37,13 +42,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      setRole(null);
+      return;
+    }
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => setRole(d.data?.role ?? null))
+      .catch(() => setRole(null));
+  }, [user]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setRole(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider
+      value={{ user, loading, role, isAdmin: role === "admin", signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );

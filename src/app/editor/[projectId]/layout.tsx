@@ -1,4 +1,4 @@
-import { Header } from "@/components/layout/Header";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 export default function EditorLayout({
   children,
@@ -6,9 +6,9 @@ export default function EditorLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <div className="flex-1 flex">{children}</div>
+    <div className="flex h-screen min-h-0 flex-col overflow-hidden">
+      <AppHeader />
+      <main className="flex min-h-0 flex-1 overflow-hidden">{children}</main>
     </div>
   );
 }

@@ -44,6 +44,8 @@ export function useAuth() {
   return {
     user: ctx.user,
     loading: ctx.loading,
+    role: ctx.role,
+    isAdmin: ctx.isAdmin,
     signInWithEmail,
     signUpWithEmail,
     signOut,

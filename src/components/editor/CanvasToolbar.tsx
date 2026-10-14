@@ -2,6 +2,7 @@
 
 import { useEditorStore } from "@/stores/editorStore";
 import { cn } from "@/lib/utils/cn";
+import { MAX_ZOOM, MIN_ZOOM, stepZoom } from "@/lib/editor/canvasConfig";
 
 /* ── SVG Icons ────────────────────────────────────────────── */
 
@@ -45,6 +46,27 @@ function ZoomInIcon({ className }: { className?: string }) {
   );
 }
 
+function HandIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 11V6a2 2 0 0 0-4 0v5" />
+      <path d="M14 10V4a2 2 0 0 0-4 0v6" />
+      <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+    </svg>
+  );
+}
+
 function MinusIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -84,9 +106,13 @@ function PlusIcon({ className }: { className?: string }) {
 
 export function CanvasToolbar() {
   const { activeTool, setActiveTool, zoom, setZoom } = useEditorStore();
+  const zoomOut = () => setZoom(stepZoom(zoom, -1));
+  const zoomIn = () => setZoom(stepZoom(zoom, 1));
 
   return (
     <div
+      role="group"
+      aria-label="Herramientas del lienzo"
       className={cn(
         "absolute bottom-4 left-4 z-30 flex items-center gap-0.5",
         "rounded-xl bg-white/90 backdrop-blur-md shadow-lg shadow-black/8",
@@ -95,10 +121,14 @@ export function CanvasToolbar() {
     >
       {/* ── Pointer (select) ──────────────────────────────── */}
       <button
+        type="button"
         onClick={() => setActiveTool("select")}
+        aria-label="Seleccionar (V)"
+        aria-pressed={activeTool === "select"}
+        aria-keyshortcuts="V"
         className={cn(
-          "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
-          activeTool !== "zoom"
+          "flex items-center justify-center w-8 h-8 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
+          activeTool === "select"
             ? "bg-neutral-900 text-white shadow-sm"
             : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
         )}
@@ -107,16 +137,38 @@ export function CanvasToolbar() {
         <PointerIcon />
       </button>
 
+      {/* ── Hand (pan) ─────────────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() => setActiveTool("pan")}
+        aria-label="Mover lienzo (H o mantener espacio y arrastrar)"
+        aria-pressed={activeTool === "pan"}
+        aria-keyshortcuts="H"
+        className={cn(
+          "flex items-center justify-center w-8 h-8 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
+          activeTool === "pan"
+            ? "bg-neutral-900 text-white shadow-sm"
+            : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
+        )}
+        title="Mover (H) · Mantén espacio y arrastra"
+      >
+        <HandIcon />
+      </button>
+
       {/* ── Zoom tool ─────────────────────────────────────── */}
       <button
+        type="button"
         onClick={() => setActiveTool("zoom")}
+        aria-label="Lupa: clic para acercar, Mayús y clic para alejar (Z)"
+        aria-pressed={activeTool === "zoom"}
+        aria-keyshortcuts="Z"
         className={cn(
-          "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
+          "flex items-center justify-center w-8 h-8 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
           activeTool === "zoom"
             ? "bg-neutral-900 text-white shadow-sm"
             : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
         )}
-        title="Zoom (Z) · Click = acercar · Shift+Click = alejar"
+        title="Lupa (Z) · Clic para acercar · Mayús + clic para alejar"
       >
         <ZoomInIcon />
       </button>
@@ -126,22 +178,31 @@ export function CanvasToolbar() {
 
       {/* ── Zoom out ──────────────────────────────────────── */}
       <button
-        onClick={() => setZoom(Math.max(0.2, +(zoom - 0.1).toFixed(1)))}
-        className="flex items-center justify-center w-7 h-7 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
+        type="button"
+        onClick={zoomOut}
+        disabled={zoom <= MIN_ZOOM}
+        aria-label="Alejar"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-40"
         title="Alejar"
       >
         <MinusIcon />
       </button>
 
       {/* ── Zoom percentage ───────────────────────────────── */}
-      <span className="text-xs font-medium text-neutral-600 w-10 text-center tabular-nums select-none">
+      <output
+        aria-label={`Zoom actual: ${Math.round(zoom * 100)} por ciento`}
+        className="w-10 select-none text-center text-xs font-medium tabular-nums text-neutral-600"
+      >
         {Math.round(zoom * 100)}%
-      </span>
+      </output>
 
       {/* ── Zoom in ───────────────────────────────────────── */}
       <button
-        onClick={() => setZoom(Math.min(2, +(zoom + 0.1).toFixed(1)))}
-        className="flex items-center justify-center w-7 h-7 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
+        type="button"
+        onClick={zoomIn}
+        disabled={zoom >= MAX_ZOOM}
+        aria-label="Acercar"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-40"
         title="Acercar"
       >
         <PlusIcon />
@@ -152,9 +213,11 @@ export function CanvasToolbar() {
 
       {/* ── Fit / reset ───────────────────────────────────── */}
       <button
+        type="button"
         onClick={() => setZoom(1)}
-        className="px-2 h-7 rounded-md text-[11px] font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
-        title="Ajustar a 100%"
+        aria-label="Restablecer zoom a 100 por ciento"
+        className="h-7 rounded-md px-2 text-[11px] font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        title="Restablecer a 100%"
       >
         Ajustar
       </button>

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useEditorStore } from "@/stores/editorStore";
+import { PageTitle } from "@/components/ui/PageTitle";
+import { getFormatLabel } from "@/lib/editor/formats";
+import { getDefaultCoverName } from "@/lib/pricing/defaults";
 import type { Project } from "@/types/project";
 import type { PhotoPlacement, PageTemplate, PageBackground } from "@/types/editor";
 
@@ -21,7 +24,11 @@ export default function ProjectDetailPage() {
       .single()
       .then(({ data, error }) => {
         if (!error && data) {
-          setProject(data as Project);
+          const projectData = data as Project;
+          setProject(projectData);
+          if (projectData.total_pages) {
+            useEditorStore.getState().setTotalPages(projectData.total_pages);
+          }
         }
         setLoading(false);
       });
@@ -45,7 +52,6 @@ export default function ProjectDetailPage() {
         }[] | null;
         if (typedPages && typedPages.length > 0) {
           const store = useEditorStore.getState();
-          store.setTotalPages(typedPages.length);
           typedPages.forEach((p) => {
             if (p.background) {
               store.setPageBackground(p.page_index, p.background);
@@ -100,9 +106,9 @@ export default function ProjectDetailPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-neutral-900">{project.title}</h1>
+      <PageTitle>{project.title}</PageTitle>
       <p className="text-sm text-neutral-500 mt-1">
-        Formato: {project.format} · Tapa: {project.cover_type} · Estado: {project.status}
+        Formato: {getFormatLabel(project.format)} · Tapa: {getDefaultCoverName(project.cover_type)} · Estado: {project.status}
       </p>
     </div>
   );

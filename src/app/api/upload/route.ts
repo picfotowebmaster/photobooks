@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
   const projectId = formData.get("projectId") as string | null;
+  const width = Number(formData.get("width")) || 0;
+  const height = Number(formData.get("height")) || 0;
 
   if (!file) {
     return NextResponse.json({ error: "No se ha proporcionado ningún archivo" }, { status: 400 });
@@ -43,8 +45,8 @@ export async function POST(request: NextRequest) {
       project_id: projectId || null,
       bucket_path_highres: highResPath,
       bucket_path_lowres: highResPath,
-      original_width: 0,
-      original_height: 0,
+      original_width: width,
+      original_height: height,
       file_size: file.size,
     } as Record<string, unknown>)
     .select()

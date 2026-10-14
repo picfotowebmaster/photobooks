@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Save, FileText, Download, CreditCard } from "lucide-react";
 import type { Profile, Invoice } from "@/types/profile";
+import { formatMXN } from "@/lib/utils/format";
 
 interface BillingTabProps {
   profile: Profile;
@@ -26,10 +27,6 @@ const usosCFDI = [
   "Gastos de viaje",
   "Construcciones",
 ];
-
-function formatMXN(value: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
-}
 
 export function BillingTab({ profile, onUpdate }: BillingTabProps) {
   const [rfc, setRfc] = useState(profile.rfc || "");

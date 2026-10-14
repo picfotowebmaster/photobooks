@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Ban, CheckCircle, Mail, Phone, Calendar, FolderOpen, CreditCard } from "lucide-react";
 import Link from "next/link";
+import { formatMXN } from "@/lib/utils/format";
+import { getFormatLabel } from "@/lib/editor/formats";
+import { getDefaultCoverName } from "@/lib/pricing/defaults";
 
 interface ClientDetail {
   client: {
@@ -37,10 +40,6 @@ interface ClientDetail {
     created_at: string;
     paid_at: string | null;
   }[];
-}
-
-function formatMXN(value: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
 }
 
 const statusLabels: Record<string, string> = {
@@ -123,7 +122,7 @@ export default function AdminClientDetailPage() {
       <div className="bg-white rounded-xl border border-neutral-200 p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-2xl font-bold text-indigo-600">
+            <div className="w-16 h-16 rounded-full bg-admin-100 flex items-center justify-center text-2xl font-bold text-admin-600">
               {(client.full_name || client.email)[0].toUpperCase()}
             </div>
             <div>
@@ -201,7 +200,7 @@ export default function AdminClientDetailPage() {
             <button
               onClick={saveProfile}
               disabled={saving}
-              className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-2 bg-admin-600 text-white text-sm rounded-lg hover:bg-admin-700 disabled:opacity-50"
             >
               {saving ? "Guardando..." : "Guardar"}
             </button>
@@ -222,7 +221,7 @@ export default function AdminClientDetailPage() {
                 <div key={p.id} className="flex items-center justify-between py-2 border-b border-neutral-100 last:border-0">
                   <div>
                     <p className="text-sm font-medium text-neutral-900">{p.title}</p>
-                    <p className="text-xs text-neutral-400">{p.format} · {statusLabels[p.status] || p.status} · {p.cover_type === "hard" ? "Tapa dura" : "Tapa blanda"}</p>
+                    <p className="text-xs text-neutral-400">{getFormatLabel(p.format)} · {statusLabels[p.status] || p.status} · {getDefaultCoverName(p.cover_type)}</p>
                   </div>
                   <span className="text-xs text-neutral-500">{new Date(p.created_at).toLocaleDateString("es-MX")}</span>
                 </div>

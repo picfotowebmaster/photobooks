@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { generateReceiptPDF } from "@/lib/invoices/pdfGenerator";
+import { getDefaultCoverName } from "@/lib/pricing/defaults";
 
 export async function GET(
   _request: NextRequest,
@@ -39,7 +40,7 @@ export async function GET(
     clientRfc: profile?.rfc,
     projectTitle: projects?.title || "Fotolibro",
     format: projects?.format || "",
-    coverType: projects?.cover_type || "soft",
+    coverType: getDefaultCoverName(projects?.cover_type),
     totalPages: order.total_pages,
     basePrice: Number(order.base_price),
     extraPagesCost: Number(order.extra_pages_cost || 0),

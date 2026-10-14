@@ -11,19 +11,36 @@ export function PricingSummary({ pricing }: PricingSummaryProps) {
 
       <div className="space-y-2 text-sm">
         <div className="flex justify-between text-neutral-600">
-          <span>
-            Base ({pricing.extraPages > 0 ? "10 páginas" : `${pricing.extraPages + 10} páginas`})
-          </span>
+          <span>Base ({pricing.basePages} páginas)</span>
           <span>
             {pricing.basePrice.toFixed(2)} {pricing.currency}
           </span>
         </div>
 
-        {pricing.extraPages > 0 && (
+        {pricing.extraSpreads > 0 && (
           <div className="flex justify-between text-neutral-600">
-            <span>Páginas extra ({pricing.extraPages} × 4.99)</span>
+            <span>Spreads extra ({pricing.extraSpreads})</span>
             <span>
-              {pricing.extraPagesCost.toFixed(2)} {pricing.currency}
+              {pricing.extraSpreadsCost.toFixed(2)} {pricing.currency}
+            </span>
+          </div>
+        )}
+
+        {pricing.extraPageRemainder > 0 && (
+          <div className="flex justify-between text-neutral-600">
+            <span>Página extra ({pricing.extraPageRemainder})</span>
+            <span>
+              {(pricing.extraPagesCost - pricing.extraSpreadsCost).toFixed(2)}{" "}
+              {pricing.currency}
+            </span>
+          </div>
+        )}
+
+        {pricing.coverSurcharge > 0 && (
+          <div className="flex justify-between text-neutral-600">
+            <span>{pricing.coverName}</span>
+            <span>
+              +{pricing.coverSurcharge.toFixed(2)} {pricing.currency}
             </span>
           </div>
         )}

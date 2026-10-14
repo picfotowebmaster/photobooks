@@ -1,4 +1,12 @@
-export type EditorTool = "select" | "text" | "background" | "sticker" | "zoom";
+export type EditorTool =
+  | "select"
+  | "text"
+  | "background"
+  | "sticker"
+  | "zoom"
+  | "pan";
+
+export type EditorPanel = "background" | "sticker" | "grid" | "templates" | "textStyle";
 
 export type FontStyle = "normal" | "bold" | "italic" | "bold italic";
 
@@ -33,6 +41,8 @@ export interface PhotoPlacement {
   zIndex: number;
   lowResUrl: string;
   highResUrl: string;
+  inLibrary?: boolean;
+  slotIndex?: number;
 }
 
 export interface StickerPlacement {
@@ -49,10 +59,29 @@ export interface StickerPlacement {
   zIndex: number;
 }
 
+export type TemplateBleedEdge = "top" | "right" | "bottom" | "left";
+
+export interface TemplateSlot {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Spread layouts: 0 = left page, 1 = right page. */
+  page?: 0 | 1;
+  /** A single photo crossing the gutter. */
+  span?: "spread";
+  /** Edges that bleed past the trim line (sangrado a corte). */
+  bleed?: Partial<Record<TemplateBleedEdge, boolean>>;
+}
+
 export interface PageTemplate {
   id: string;
   name: string;
-  slots: { x: number; y: number; w: number; h: number }[];
+  description?: string;
+  slots: TemplateSlot[];
+  /** "page" templates apply to one page, "spread" templates to a double page. */
+  scope?: "page" | "spread";
+  kind?: string;
   backgroundUrl?: string;
   backgroundColor?: string;
 }

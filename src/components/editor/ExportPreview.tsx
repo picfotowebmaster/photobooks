@@ -2,17 +2,26 @@
 
 import { Button } from "@/components/ui/Button";
 import { useEditorStore } from "@/stores/editorStore";
-import { calculatePricing } from "@/lib/pricing/calculator";
+import { usePricing } from "@/hooks/usePricing";
+import type { ProjectFormat } from "@/lib/editor/formats";
 
 interface ExportPreviewProps {
-  format: "10x10" | "8.5x11" | "8x10";
-  coverType: "soft" | "hard";
+  format: ProjectFormat;
+  coverType: string;
   onExport: () => void;
 }
 
 export function ExportPreview({ format, coverType, onExport }: ExportPreviewProps) {
   const { totalPages } = useEditorStore();
-  const pricing = calculatePricing({ totalPages, coverType, format });
+  const { pricing } = usePricing({ totalPages, coverType, format });
+
+  if (!pricing) {
+    return (
+      <div className="p-6 text-sm text-neutral-500">
+        No se pudo calcular el precio. Revisa la configuración.
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-4">
@@ -20,28 +29,36 @@ export function ExportPreview({ format, coverType, onExport }: ExportPreviewProp
 
       <div className="space-y-2 text-sm">
         <div className="flex justify-between text-neutral-600">
-          <span>
-            Base ({pricing.extraPages > 0 ? `10 páginas` : `${totalPages} páginas`})
-          </span>
+          <span>Base ({pricing.basePages} páginas)</span>
           <span>
             {pricing.basePrice.toFixed(2)} {pricing.currency}
           </span>
         </div>
 
-        {pricing.extraPages > 0 && (
+        {pricing.extraSpreads > 0 && (
           <div className="flex justify-between text-neutral-600">
-            <span>Páginas extra ({pricing.extraPages} × {(4.99).toFixed(2)})</span>
+            <span>Spreads extra ({pricing.extraSpreads})</span>
             <span>
-              {pricing.extraPagesCost.toFixed(2)} {pricing.currency}
+              {pricing.extraSpreadsCost.toFixed(2)} {pricing.currency}
+            </span>
+          </div>
+        )}
+
+        {pricing.extraPageRemainder > 0 && (
+          <div className="flex justify-between text-neutral-600">
+            <span>Página extra ({pricing.extraPageRemainder})</span>
+            <span>
+              {(pricing.extraPagesCost - pricing.extraSpreadsCost).toFixed(2)}{" "}
+              {pricing.currency}
             </span>
           </div>
         )}
 
         {pricing.coverSurcharge > 0 && (
           <div className="flex justify-between text-neutral-600">
-            <span>Recargo por tapa dura</span>
+            <span>{pricing.coverName}</span>
             <span>
-              {pricing.coverSurcharge.toFixed(2)} {pricing.currency}
+              +{pricing.coverSurcharge.toFixed(2)} {pricing.currency}
             </span>
           </div>
         )}

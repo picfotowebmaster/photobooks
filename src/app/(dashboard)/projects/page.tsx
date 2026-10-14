@@ -1,18 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useProjectStore } from "@/stores/projectStore";
 import { ProjectList } from "@/components/projects/ProjectList";
 import { Button } from "@/components/ui/Button";
+import { PageTitle } from "@/components/ui/PageTitle";
 import { Modal } from "@/components/ui/Modal";
-import { CreateProjectModal } from "@/components/projects/CreateProjectModal";
 import { toast } from "sonner";
 import type { Project } from "@/types/project";
 
 export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const { projects, setProjects, removeProject } = useProjectStore();
@@ -59,18 +59,18 @@ export default function ProjectsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">Mis proyectos</h1>
-        <Button onClick={() => setModalOpen(true)}>Nuevo fotolibro</Button>
+        <PageTitle>Mis proyectos</PageTitle>
+        <Link
+          href="/projects/new"
+          className="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+        >
+          Nuevo fotolibro
+        </Link>
       </div>
       <ProjectList
         projects={projects}
         loading={loading}
         onDelete={(id) => setDeleteTarget(id)}
-      />
-
-      <CreateProjectModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
       />
 
       <Modal

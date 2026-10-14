@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import loginBg from "@/images/loginpicfoto.jpg";
 import logo from "@/images/Logo-Pic-foto.png";
 import type { AuthError } from "@supabase/supabase-js";
@@ -83,13 +84,12 @@ export default function LoginPage() {
                 >
                   Nombre completo
                 </label>
-                <input
+                <Input
                   id="fullName"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required={mode === "register"}
-                  className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
                   placeholder="Juan Pérez"
                 />
               </div>
@@ -102,13 +102,12 @@ export default function LoginPage() {
               >
                 Email
               </label>
-              <input
+              <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
                 placeholder="you@example.com"
               />
             </div>
@@ -120,14 +119,13 @@ export default function LoginPage() {
               >
                 Contraseña
               </label>
-              <input
+              <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none"
                 placeholder="••••••••"
               />
             </div>

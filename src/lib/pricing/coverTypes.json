@@ -1,0 +1,14 @@
+[
+  { "key": "color_book_pasta_dura", "name": "Color Book Pasta Dura", "description": "Color Book con pasta dura", "price": 0, "sortOrder": 1 },
+  { "key": "pasta_acolchada", "name": "Pasta Acolchada", "description": "Pasta acolchada", "price": 0, "sortOrder": 2 },
+  { "key": "pasta_acrilico_2mm", "name": "Pasta Acrilico de 2mm", "description": "Pasta en acrílico de 2mm", "price": 0, "sortOrder": 3 },
+  { "key": "pasta_dura", "name": "Pasta Dura", "description": "Pasta dura", "price": 0, "sortOrder": 4 },
+  { "key": "pasta_dura_caja_deslizable", "name": "Pasta Dura con Caja deslizable", "description": "Pasta dura con caja deslizable", "price": 0, "sortOrder": 5 },
+  { "key": "pasta_foto_laminada_vinipiel", "name": "Pasta Foto Laminada con Vinipiel", "description": "Foto laminada con vinipiel", "price": 0, "sortOrder": 6 },
+  { "key": "pasta_sencilla", "name": "Pasta Sencilla", "description": "Pasta sencilla", "price": 0, "sortOrder": 7 },
+  { "key": "pasta_vinipiel_relieve", "name": "Pasta Vinipiel con Relieve", "description": "Vinipiel con relieve", "price": 0, "sortOrder": 8 },
+  { "key": "pasta_vinipiel_foto_ventana_relieve", "name": "Pasta Vinipiel Foto-Ventana con Relieve", "description": "Vinipiel foto-ventana con relieve", "price": 0, "sortOrder": 9 },
+  { "key": "pasta_vinipiel_foto_ventana_liso", "name": "Pasta Vinipiel Foto-Ventana Liso", "description": "Vinipiel foto-ventana liso", "price": 0, "sortOrder": 10 },
+  { "key": "pasta_vinipiel_liso", "name": "Pasta Vinipiel Liso", "description": "Vinipiel liso", "price": 0, "sortOrder": 11 },
+  { "key": "photo_book_acrilico_6mm", "name": "Photo Book Pasta en Acrílico de 6mm", "description": "Photo Book con pasta en acrílico de 6mm", "price": 0, "sortOrder": 12 }
+]

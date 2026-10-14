@@ -5,6 +5,7 @@ import type {
   TextPlacement,
   StickerPlacement,
   EditorTool,
+  EditorPanel,
   PageTemplate,
   FontStyle,
   TextAlign,
@@ -23,8 +24,11 @@ interface EditorState {
   selectedStickerId: string | null;
   activeStickerId: string | null;
   activeTool: EditorTool;
+  activePanel: EditorPanel | null;
   zoom: number;
+  previewMode: boolean;
   templates: Record<number, PageTemplate>;
+  lastTemplate: PageTemplate | null;
   pageBackgrounds: Record<number, PageBackground>;
   gridConfig: GridConfig;
 
@@ -32,13 +36,18 @@ interface EditorState {
   setTotalPages: (count: number) => void;
   selectPhoto: (id: string | null) => void;
   selectSticker: (id: string | null) => void;
+  clearSelection: () => void;
   setActiveStickerId: (id: string | null) => void;
   setActiveTool: (tool: EditorTool) => void;
+  setActivePanel: (panel: EditorPanel | null) => void;
   setZoom: (zoom: number) => void;
+  setPreviewMode: (enabled: boolean) => void;
   addPhotoToCanvas: (photo: PhotoPlacement) => void;
   updatePhotoPlacement: (id: string, data: Partial<PhotoPlacement>) => void;
   removePhoto: (id: string) => void;
   setPageTemplate: (page: number, template: PageTemplate) => void;
+  clearPageTemplate: (page: number) => void;
+  setLastTemplate: (template: PageTemplate | null) => void;
   setPageBackground: (page: number, background: PageBackground) => void;
   setPageBackgrounds: (backgrounds: Record<number, PageBackground>) => void;
   setGridConfig: (config: Partial<GridConfig>) => void;
@@ -66,8 +75,11 @@ const initialState = {
   selectedStickerId: null,
   activeStickerId: null,
   activeTool: "select" as EditorTool,
+  activePanel: null as EditorPanel | null,
   zoom: 1,
+  previewMode: false,
   templates: {},
+  lastTemplate: null as PageTemplate | null,
   pageBackgrounds: {},
   gridConfig: DEFAULT_GRID_CONFIG,
 };
@@ -84,16 +96,47 @@ export const useEditorStore = create<EditorState>((set) => ({
   },
 
   selectPhoto: (id) =>
-    set({ selectedPhotoId: id, selectedTextId: null, selectedStickerId: null }),
+    set((s) => ({
+      selectedPhotoId: id,
+      selectedTextId: null,
+      selectedStickerId: null,
+      activePanel: s.activePanel === "textStyle" ? null : s.activePanel,
+    })),
 
   selectSticker: (id) =>
-    set({ selectedStickerId: id, selectedPhotoId: null, selectedTextId: null, activeTool: "select" }),
+    set((s) => ({
+      selectedStickerId: id,
+      selectedPhotoId: null,
+      selectedTextId: null,
+      activeTool: "select",
+      activePanel: s.activePanel === "textStyle" ? null : s.activePanel,
+    })),
+
+  clearSelection: () =>
+    set({ selectedPhotoId: null, selectedTextId: null, selectedStickerId: null }),
 
   setActiveStickerId: (id) => set({ activeStickerId: id }),
 
   setActiveTool: (tool) => set({ activeTool: tool }),
 
+  setActivePanel: (panel) => set({ activePanel: panel }),
+
   setZoom: (zoom) => set({ zoom }),
+
+  setPreviewMode: (previewMode) =>
+    set({
+      previewMode,
+      ...(previewMode
+        ? {
+            activeTool: "select" as EditorTool,
+            activePanel: null,
+            selectedPhotoId: null,
+            selectedTextId: null,
+            selectedStickerId: null,
+            activeStickerId: null,
+          }
+        : {}),
+    }),
 
   addPhotoToCanvas: (photo) =>
     set((s) => ({ photos: [...s.photos, photo] })),
@@ -111,6 +154,15 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   setPageTemplate: (page, template) =>
     set((s) => ({ templates: { ...s.templates, [page]: template } })),
+
+  clearPageTemplate: (page) =>
+    set((s) => {
+      const next = { ...s.templates };
+      delete next[page];
+      return { templates: next };
+    }),
+
+  setLastTemplate: (template) => set({ lastTemplate: template }),
 
   setPageBackground: (page, background) =>
     set((s) => ({ pageBackgrounds: { ...s.pageBackgrounds, [page]: background } })),
@@ -146,10 +198,18 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((s) => ({
       texts: s.texts.filter((t) => t.id !== id),
       selectedTextId: s.selectedTextId === id ? null : s.selectedTextId,
+      activePanel:
+        s.selectedTextId === id && s.activePanel === "textStyle" ? null : s.activePanel,
     })),
 
   selectText: (id) =>
-    set({ selectedTextId: id, selectedPhotoId: null, selectedStickerId: null, activeTool: "select" }),
+    set({
+      selectedTextId: id,
+      selectedPhotoId: null,
+      selectedStickerId: null,
+      activeTool: "select",
+      activePanel: id ? "textStyle" : null,
+    }),
 
   addSticker: (stickerData) => {
     const id = uuid();

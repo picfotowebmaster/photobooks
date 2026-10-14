@@ -34,14 +34,29 @@ const TINT_ACCENT_DEFAULT = "#3b82f6";
 
 type Section = "color" | "pattern" | "texture";
 
+function FieldLabel({
+  children,
+  htmlFor,
+}: {
+  children: React.ReactNode;
+  htmlFor?: string;
+}) {
+  return (
+    <label htmlFor={htmlFor} className="block text-xs font-medium text-neutral-500 mb-1.5">
+      {children}
+    </label>
+  );
+}
+
+type ApplyScope = "page" | "spread" | "all";
+
 export function BackgroundPanel() {
   const { projectId } = useParams<{ projectId: string }>();
   const currentPage = useEditorStore((s) => s.currentPage);
   const pageBackgrounds = useEditorStore((s) => s.pageBackgrounds);
 
   const [section, setSection] = useState<Section>("color");
-  const [applyToSpread, setApplyToSpread] = useState(false);
-  const [applyToAll, setApplyToAll] = useState(false);
+  const [applyScope, setApplyScope] = useState<ApplyScope>("page");
   const [targetPage, setTargetPage] = useState(currentPage);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -65,9 +80,9 @@ export function BackgroundPanel() {
   const applyBackground = (bg: PageBackground) => {
     const store = useEditorStore.getState();
     const pages: number[] = [];
-    if (applyToAll) {
+    if (applyScope === "all") {
       for (let i = 0; i < store.totalPages; i++) pages.push(i);
-    } else if (applyToSpread) {
+    } else if (applyScope === "spread") {
       const pair = targetPage % 2 === 0 ? targetPage + 1 : targetPage - 1;
       pages.push(targetPage);
       if (pair >= 0 && pair < store.totalPages) pages.push(pair);
@@ -86,7 +101,20 @@ export function BackgroundPanel() {
             { onConflict: "project_id, page_index" }
           )
         )
-      ).catch(() => toast.error("Error al guardar el fondo"));
+      )
+        .then((results) => {
+          const failedResult = results.find((result) => result.error);
+          if (failedResult?.error) {
+            toast.error(`No se pudo guardar el fondo: ${failedResult.error.message}`);
+          }
+        })
+        .catch((error: unknown) => {
+          toast.error(
+            error instanceof Error
+              ? `No se pudo guardar el fondo: ${error.message}`
+              : "No se pudo guardar el fondo."
+          );
+        });
     }
   };
 
@@ -165,197 +193,259 @@ export function BackgroundPanel() {
   ];
 
   return (
-    <div className="border-b border-neutral-200 bg-neutral-50">
-      <div className="flex items-center gap-1.5 px-4 py-1.5">
+    <div className="space-y-5">
+      <div className="flex gap-1 p-1 rounded-lg bg-neutral-100">
         {sections.map((s) => (
           <button
             key={s.id}
             type="button"
             onClick={() => setSection(s.id)}
             className={cn(
-              "h-7 px-2 rounded text-xs font-medium transition-colors",
+              "flex-1 h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
               section === s.id
                 ? "bg-neutral-900 text-white"
                 : "text-neutral-600 hover:bg-neutral-100"
             )}
+            aria-pressed={section === s.id}
           >
             {s.label}
           </button>
         ))}
+      </div>
 
-        <div className="w-px h-5 bg-neutral-200 mx-1" />
-
-        {section === "color" && (
-          <>
-            <div className="relative">
+      {section === "color" && (
+        <div className="space-y-4">
+          <div>
+            <FieldLabel htmlFor="background-color">Color personalizado</FieldLabel>
+            <div className="flex items-center gap-2">
               <input
+                id="background-color"
                 type="color"
                 value={currentColor}
                 onChange={(e) => applyColor(e.target.value)}
-                className="w-7 h-7 rounded border border-neutral-300 cursor-pointer p-0.5"
+                aria-label="Elegir color de fondo"
+                className="w-8 h-8 rounded border border-neutral-300 cursor-pointer p-0.5"
+              />
+              <input
+                id="background-color-hex"
+                type="text"
+                value={hexInput}
+                onChange={(e) => setHexInput(e.target.value)}
+                onBlur={handleHexSubmit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleHexSubmit();
+                }}
+                aria-label="Código hexadecimal del fondo"
+                className="flex-1 h-8 rounded border border-neutral-300 bg-white px-2 text-sm text-neutral-700 font-mono"
+                placeholder="#ffffff"
               />
             </div>
+          </div>
 
-            <div className="flex items-center gap-0.5">
+          <div>
+            <FieldLabel>Predefinidos</FieldLabel>
+            <div className="flex flex-wrap gap-1.5">
               {PRESET_COLORS.map((color) => (
                 <button
                   key={color}
                   type="button"
                   onClick={() => applyColor(color)}
                   className={cn(
-                    "w-4 h-4 rounded-full border transition-transform hover:scale-110",
+                    "w-6 h-6 rounded-full border transition-transform hover:scale-110",
                     currentColor.toLowerCase() === color.toLowerCase()
                       ? "border-neutral-900 ring-1 ring-neutral-900"
                       : "border-neutral-300"
                   )}
                   style={{ backgroundColor: color }}
                   title={color}
+                  aria-label={`Color ${color}`}
+                  aria-pressed={currentColor.toLowerCase() === color.toLowerCase()}
                 />
               ))}
             </div>
+          </div>
+        </div>
+      )}
 
-            <input
-              type="text"
-              value={hexInput}
-              onChange={(e) => setHexInput(e.target.value)}
-              onBlur={handleHexSubmit}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleHexSubmit();
-              }}
-              className="w-[72px] h-7 rounded border border-neutral-300 bg-white px-1.5 text-xs text-neutral-700 font-mono"
-              placeholder="#ffffff"
-            />
-          </>
-        )}
-
-        {section === "pattern" && (
-          <>
+      {section === "pattern" && (
+        <div className="space-y-4">
+          <div>
+            <FieldLabel>Patrón</FieldLabel>
             <PatternPicker selectedId={selectedPatternId} onSelect={applyPattern} />
+          </div>
 
-            <div className="flex items-center gap-1 text-xs text-neutral-600 ml-2">
-              <span>Base</span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="pattern-tint-base" className="text-xs text-neutral-600">Base</label>
               <input
+                id="pattern-tint-base"
                 type="color"
                 value={tintBase}
                 onChange={(e) => applyTint("tintBase", e.target.value)}
-                className="w-6 h-6 rounded border border-neutral-300 cursor-pointer p-0.5"
+                aria-label="Color base del patrón"
+                className="w-7 h-7 rounded border border-neutral-300 cursor-pointer p-0.5"
               />
-              <span className="ml-1">Acento</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="pattern-tint-accent" className="text-xs text-neutral-600">Acento</label>
               <input
+                id="pattern-tint-accent"
                 type="color"
                 value={tintAccent}
                 onChange={(e) => applyTint("tintAccent", e.target.value)}
-                className="w-6 h-6 rounded border border-neutral-300 cursor-pointer p-0.5"
+                aria-label="Color de acento del patrón"
+                className="w-7 h-7 rounded border border-neutral-300 cursor-pointer p-0.5"
               />
             </div>
-          </>
-        )}
+          </div>
+        </div>
+      )}
 
-        {section === "texture" && (
-          <>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/png,image/jpeg"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleTextureUpload(file);
-              }}
-              className="text-xs text-neutral-600 file:mr-2 file:px-2 file:py-1 file:rounded file:border-0 file:bg-neutral-900 file:text-white file:text-xs file:cursor-pointer"
-            />
-            {uploading && <span className="text-xs text-neutral-400">Subiendo...</span>}
-          </>
-        )}
+      {section === "texture" && (
+        <div>
+          <FieldLabel htmlFor="background-texture">Subir textura</FieldLabel>
+          <input
+            id="background-texture"
+            ref={fileRef}
+            type="file"
+            accept="image/png,image/jpeg"
+            disabled={uploading}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleTextureUpload(file);
+            }}
+            className="w-full text-xs text-neutral-600 file:mr-2 file:px-2 file:py-1 file:rounded file:border-0 file:bg-neutral-900 file:text-white file:text-xs file:cursor-pointer"
+          />
+          {uploading && (
+            <span className="block mt-2 text-xs text-neutral-400">Subiendo...</span>
+          )}
+        </div>
+      )}
 
-        {(section === "pattern" || section === "texture") && (
-          <>
-            <div className="w-px h-5 bg-neutral-200 ml-1" />
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                onClick={() => applyMode("tile")}
-                className={cn(
-                  "h-7 px-2 rounded text-xs font-medium transition-colors",
-                  currentMode === "tile"
-                    ? "bg-neutral-900 text-white"
-                    : "text-neutral-600 hover:bg-neutral-100"
-                )}
-              >
-                Mosaico
-              </button>
-              <button
-                type="button"
-                onClick={() => applyMode("stretch")}
-                className={cn(
-                  "h-7 px-2 rounded text-xs font-medium transition-colors",
-                  currentMode === "stretch"
-                    ? "bg-neutral-900 text-white"
-                    : "text-neutral-600 hover:bg-neutral-100"
-                )}
-              >
-                Estirar
-              </button>
-            </div>
-          </>
-        )}
+      {(section === "pattern" || section === "texture") && (
+        <div>
+          <FieldLabel>Modo</FieldLabel>
+          <div className="flex gap-1 p-1 rounded-lg bg-neutral-100" role="group" aria-label="Modo de fondo">
+            <button
+              type="button"
+              onClick={() => applyMode("tile")}
+              className={cn(
+                "flex-1 h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
+                currentMode === "tile"
+                  ? "bg-neutral-900 text-white"
+                  : "text-neutral-600 hover:bg-neutral-100"
+              )}
+              aria-pressed={currentMode === "tile"}
+            >
+              Mosaico
+            </button>
+            <button
+              type="button"
+              onClick={() => applyMode("stretch")}
+              className={cn(
+                "flex-1 h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
+                currentMode === "stretch"
+                  ? "bg-neutral-900 text-white"
+                  : "text-neutral-600 hover:bg-neutral-100"
+              )}
+              aria-pressed={currentMode === "stretch"}
+            >
+              Estirar
+            </button>
+          </div>
+        </div>
+      )}
 
-        <div className="w-px h-5 bg-neutral-200 ml-1" />
-
-        <div className="flex items-center gap-0.5">
+      <div>
+        <FieldLabel>Alcance del fondo</FieldLabel>
+        <div
+          className="flex gap-1 rounded-lg bg-neutral-100 p-1"
+          role="group"
+          aria-label="Alcance del fondo"
+        >
           <button
             type="button"
-            onClick={() => setTargetPage(leftPage)}
+            onClick={() => setApplyScope("page")}
+            aria-pressed={applyScope === "page"}
             className={cn(
-              "h-7 px-2 rounded text-xs font-medium transition-colors",
-              isLeftActive ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"
+              "flex-1 h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
+              applyScope === "page"
+                ? "bg-neutral-900 text-white"
+                : "text-neutral-600 hover:bg-neutral-100"
             )}
           >
-            Izq
+            Esta página
           </button>
           <button
             type="button"
-            onClick={() => setTargetPage(rightPage)}
+            onClick={() => setApplyScope("spread")}
+            aria-pressed={applyScope === "spread"}
             className={cn(
-              "h-7 px-2 rounded text-xs font-medium transition-colors",
-              !isLeftActive ? "bg-neutral-900 text-white" : "text-neutral-600 hover:bg-neutral-100"
+              "flex-1 h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
+              applyScope === "spread"
+                ? "bg-neutral-900 text-white"
+                : "text-neutral-600 hover:bg-neutral-100"
             )}
           >
-            Der
+            Este pliego
+          </button>
+          <button
+            type="button"
+            onClick={() => setApplyScope("all")}
+            aria-pressed={applyScope === "all"}
+            className={cn(
+              "flex-1 h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
+              applyScope === "all"
+                ? "bg-neutral-900 text-white"
+                : "text-neutral-600 hover:bg-neutral-100"
+            )}
+          >
+            Todo el libro
           </button>
         </div>
-
-        <label
-          className={cn(
-            "flex items-center gap-1 text-xs text-neutral-600 cursor-pointer",
-            applyToAll && "opacity-40 pointer-events-none"
-          )}
-        >
-          <input
-            type="checkbox"
-            checked={applyToSpread}
-            onChange={(e) => setApplyToSpread(e.target.checked)}
-            className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 h-3 w-3"
-          />
-          Pliego
-        </label>
-        <label className="flex items-center gap-1 text-xs text-neutral-600 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={applyToAll}
-            onChange={(e) => setApplyToAll(e.target.checked)}
-            className="rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 h-3 w-3"
-          />
-          Todas
-        </label>
-
-        <button
-          type="button"
-          onClick={handleReset}
-          className="h-7 px-2 rounded text-xs text-neutral-600 hover:bg-neutral-100 transition-colors"
-        >
-          Restablecer
-        </button>
       </div>
+
+      {applyScope !== "all" && (
+        <div>
+          <FieldLabel>Página de referencia</FieldLabel>
+          <div className="flex gap-1 rounded-lg bg-neutral-100 p-1" role="group" aria-label="Página de referencia">
+            <button
+              type="button"
+              onClick={() => setTargetPage(leftPage)}
+              aria-pressed={isLeftActive}
+              className={cn(
+                "flex-1 h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
+                isLeftActive
+                  ? "bg-neutral-900 text-white"
+                  : "text-neutral-600 hover:bg-neutral-100"
+              )}
+            >
+              Página izquierda
+            </button>
+            <button
+              type="button"
+              onClick={() => setTargetPage(rightPage)}
+              aria-pressed={!isLeftActive}
+              className={cn(
+                "flex-1 h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500",
+                !isLeftActive
+                  ? "bg-neutral-900 text-white"
+                  : "text-neutral-600 hover:bg-neutral-100"
+              )}
+            >
+              Página derecha
+            </button>
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleReset}
+        className="w-full h-9 rounded-lg border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-100 transition-colors"
+      >
+        Restablecer fondo
+      </button>
     </div>
   );
 }

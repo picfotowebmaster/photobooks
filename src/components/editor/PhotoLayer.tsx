@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Image as KonvaImage } from "react-konva";
+import { Group, Image as KonvaImage } from "react-konva";
 import Konva from "konva";
 import type { PhotoPlacement } from "@/types/editor";
+import { withSupabaseAssetApiKey } from "@/lib/supabase/assetUrl";
+
+interface PhotoSlot {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
 
 interface PhotoLayerProps {
   photo: PhotoPlacement;
@@ -18,6 +26,8 @@ interface PhotoLayerProps {
     rotation: number
   ) => void;
   transformerRef: React.RefObject<Konva.Transformer | null>;
+  slot?: PhotoSlot;
+  xOffset?: number;
 }
 
 export function PhotoLayer({
@@ -27,15 +37,24 @@ export function PhotoLayer({
   onDragEnd,
   onTransformEnd,
   transformerRef,
+  slot,
+  xOffset = 0,
 }: PhotoLayerProps) {
   const imageRef = useRef<Konva.Image>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
 
   useEffect(() => {
+    let active = true;
     const img = new window.Image();
     img.crossOrigin = "anonymous";
-    img.src = photo.lowResUrl;
-    img.onload = () => setImage(img);
+    img.src = withSupabaseAssetApiKey(photo.lowResUrl);
+    img.onload = () => {
+      if (active) setImage(img);
+    };
+    return () => {
+      active = false;
+      img.onload = null;
+    };
   }, [photo.lowResUrl]);
 
   useEffect(() => {
@@ -47,11 +66,11 @@ export function PhotoLayer({
 
   if (!image) return null;
 
-  return (
+  const imageNode = (
     <KonvaImage
       ref={imageRef}
       image={image}
-      x={photo.x}
+      x={photo.x + (slot ? 0 : xOffset)}
       y={photo.y}
       width={photo.width}
       height={photo.height}
@@ -75,5 +94,19 @@ export function PhotoLayer({
         );
       }}
     />
+  );
+
+  if (!slot) return imageNode;
+
+  return (
+    <Group
+      x={xOffset}
+      clipX={slot.x}
+      clipY={slot.y}
+      clipWidth={slot.w}
+      clipHeight={slot.h}
+    >
+      {imageNode}
+    </Group>
   );
 }

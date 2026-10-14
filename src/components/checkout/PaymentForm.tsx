@@ -7,9 +7,17 @@ interface PaymentFormProps {
   projectId: string;
   total: number;
   currency: string;
+  totalPages: number;
+  coverType: string;
 }
 
-export function PaymentForm({ projectId, total, currency }: PaymentFormProps) {
+export function PaymentForm({
+  projectId,
+  total,
+  currency,
+  totalPages,
+  coverType,
+}: PaymentFormProps) {
   const [loading, setLoading] = useState(false);
 
   const handleCheckout = async () => {
@@ -17,9 +25,15 @@ export function PaymentForm({ projectId, total, currency }: PaymentFormProps) {
     try {
       const res = await fetch("/api/projects/" + projectId + "/checkout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ totalPages, coverType }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
+      const payload = await res.json();
+      if (!res.ok) {
+        alert(payload.error || "No se pudo iniciar el pago");
+        return;
+      }
+      if (payload.url) window.location.href = payload.url;
     } finally {
       setLoading(false);
     }

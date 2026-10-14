@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { resolveFormat } from "@/lib/editor/formats";
+import { DEFAULT_PRICING_SETTINGS } from "@/lib/pricing/defaults";
 
 export async function GET() {
   const supabase = await createServerSupabase();
@@ -42,8 +44,11 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       title: body.title || "Fotolibro sin título",
       description: body.description || null,
-      format: body.format || "10x10",
-      cover_type: body.cover_type || "soft",
+      format: resolveFormat(body.format),
+      cover_type:
+        typeof body.cover_type === "string" && body.cover_type.trim()
+          ? body.cover_type.trim()
+          : DEFAULT_PRICING_SETTINGS.defaultCoverKey,
     } as Record<string, unknown>)
     .select()
     .single();

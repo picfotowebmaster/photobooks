@@ -5,6 +5,7 @@ import { Rect, Image as KonvaImage } from "react-konva";
 import type { PageBackground } from "@/types/editor";
 import { getPatternById } from "@/types/pattern";
 import { getPatternTileImage, loadImage } from "@/lib/editor/patternRenderer";
+import { withSupabaseAssetApiKey } from "@/lib/supabase/assetUrl";
 
 interface BackgroundLayerProps {
   width: number;
@@ -48,7 +49,7 @@ export function BackgroundLayer({
 
     if (bg.type === "image" && bg.imageUrl) {
       setTextureImage(null);
-      loadImage(bg.imageUrl)
+      loadImage(withSupabaseAssetApiKey(bg.imageUrl))
         .then((img) => {
           if (active) setTextureImage(img);
         })

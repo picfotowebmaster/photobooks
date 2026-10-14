@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { CreditCard, DollarSign, Clock, ExternalLink, Plus, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { SavedCard } from "@/types/profile";
+import { formatMXN } from "@/lib/utils/format";
 
 interface Order {
   id: string;
@@ -32,10 +33,6 @@ const brandLabels: Record<string, string> = {
 };
 
 const cardBrands = ["visa", "mastercard", "amex", "paypal", "openpay"];
-
-function formatMXN(value: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
-}
 
 export function PaymentsTab() {
   const [orders, setOrders] = useState<Order[]>([]);

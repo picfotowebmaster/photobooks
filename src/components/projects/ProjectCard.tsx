@@ -3,7 +3,10 @@
 import Link from "next/link";
 import type { Project } from "@/types/project";
 import { cn } from "@/lib/utils/cn";
+import { getFormatLabel } from "@/lib/editor/formats";
+import { getDefaultCoverName } from "@/lib/pricing/defaults";
 import { Button } from "@/components/ui/Button";
+import { withSupabaseAssetApiKey } from "@/lib/supabase/assetUrl";
 
 interface ProjectCardProps {
   project: Project;
@@ -31,7 +34,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
       <div className="aspect-square rounded-lg bg-neutral-100 mb-3 flex items-center justify-center">
         {project.cover_image_url ? (
           <img
-            src={project.cover_image_url}
+            src={withSupabaseAssetApiKey(project.cover_image_url)}
             alt={project.title}
             className="w-full h-full object-cover rounded-lg"
           />
@@ -52,7 +55,7 @@ export function ProjectCard({ project, onDelete }: ProjectCardProps) {
 
       <div className="flex items-center justify-between mt-1">
         <span className="text-xs text-neutral-500">
-          {project.format} · {project.cover_type}
+          {getFormatLabel(project.format)} · {getDefaultCoverName(project.cover_type)}
         </span>
         <span
           className={cn(

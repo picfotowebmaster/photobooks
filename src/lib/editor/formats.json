@@ -1,0 +1,9 @@
+[
+  { "key": "8x10", "label": "8×10\"", "widthIn": 8, "heightIn": 10 },
+  { "key": "8.5x11", "label": "8.5×11\"", "widthIn": 8.5, "heightIn": 11 },
+  { "key": "11x8.5", "label": "11×8.5\"", "widthIn": 11, "heightIn": 8.5 },
+  { "key": "10x10", "label": "10×10\"", "widthIn": 10, "heightIn": 10 },
+  { "key": "12x12", "label": "12×12\"", "widthIn": 12, "heightIn": 12 },
+  { "key": "11x14", "label": "11×14\"", "widthIn": 11, "heightIn": 14 },
+  { "key": "14x11", "label": "14×11\"", "widthIn": 14, "heightIn": 11 }
+]

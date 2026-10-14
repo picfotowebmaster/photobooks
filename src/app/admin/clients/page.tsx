@@ -2,7 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Search, Ban, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Ban, CheckCircle } from "lucide-react";
+import { formatMXN } from "@/lib/utils/format";
+import { Pagination } from "@/components/ui/Pagination";
+import { PageTitle } from "@/components/ui/PageTitle";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface Client {
   id: string;
@@ -23,13 +29,10 @@ interface ClientsResponse {
   totalPages: number;
 }
 
-function formatMXN(value: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
-}
-
 export default function AdminClientsPage() {
   const [response, setResponse] = useState<ClientsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -37,6 +40,7 @@ export default function AdminClientsPage() {
 
   const fetchClients = useCallback(() => {
     setLoading(true);
+    setError(null);
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (filter) params.set("filter", filter);
@@ -44,8 +48,12 @@ export default function AdminClientsPage() {
     params.set("limit", "20");
 
     fetch(`/api/admin/clients?${params}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
       .then(setResponse)
+      .catch(() => setError("No se pudieron cargar los clientes."))
       .finally(() => setLoading(false));
   }, [search, filter, page]);
 
@@ -69,28 +77,29 @@ export default function AdminClientsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-neutral-900">Clientes</h1>
+      <PageTitle>Clientes</PageTitle>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-          <input
+          <Input
             type="text"
             placeholder="Buscar por nombre o email..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            variant="admin"
+            className="pl-10 pr-4"
           />
         </div>
-        <select
+        <Select
           value={filter}
           onChange={(e) => { setFilter(e.target.value); setPage(1); }}
-          className="px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white"
+          variant="admin"
         >
           <option value="">Todos</option>
           <option value="active">Activos</option>
           <option value="banned">Baneados</option>
-        </select>
+        </Select>
       </div>
 
       <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
@@ -109,14 +118,16 @@ export default function AdminClientsPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="text-center py-12 text-neutral-400">Cargando...</td></tr>
-              ) : !response?.data.length ? (
+                <tr><td colSpan={7} className="py-12"><div className="flex justify-center"><Spinner size="sm" /></div></td></tr>
+              ) : error ? (
+                <tr><td colSpan={7} className="text-center py-12 text-neutral-400">{error}</td></tr>
+              ) : !response?.data?.length ? (
                 <tr><td colSpan={7} className="text-center py-12 text-neutral-400">No se encontraron clientes.</td></tr>
               ) : (
                 response.data.map((client) => (
                   <tr key={client.id} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
                     <td className="px-4 py-3">
-                      <Link href={`/admin/clients/${client.id}`} className="font-medium text-neutral-900 hover:text-indigo-600">
+                      <Link href={`/admin/clients/${client.id}`} className="font-medium text-neutral-900 hover:text-admin-600">
                         {client.full_name || "Sin nombre"}
                       </Link>
                       <p className="text-xs text-neutral-400">
@@ -142,7 +153,7 @@ export default function AdminClientsPage() {
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/clients/${client.id}`}
-                          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                          className="text-xs text-admin-600 hover:text-admin-800 font-medium"
                         >
                           Ver
                         </Link>
@@ -167,27 +178,13 @@ export default function AdminClientsPage() {
         </div>
 
         {response && response.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200">
-            <span className="text-sm text-neutral-500">
-              Página {response.page} de {response.totalPages} ({response.total} clientes)
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage(page - 1)}
-                disabled={page <= 1}
-                className="p-1 rounded hover:bg-neutral-100 disabled:opacity-30"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setPage(page + 1)}
-                disabled={page >= response.totalPages}
-                className="p-1 rounded hover:bg-neutral-100 disabled:opacity-30"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={response.totalPages}
+            total={response.total}
+            label="clientes"
+            onPageChange={setPage}
+          />
         )}
       </div>
     </div>

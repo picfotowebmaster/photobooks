@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { DEFAULT_FORMAT } from "@/lib/editor/formats";
+import { DEFAULT_PRICING_SETTINGS } from "@/lib/pricing/defaults";
 
 export default async function EditorNewPage() {
   const supabase = await createServerSupabase();
@@ -18,8 +20,8 @@ export default async function EditorNewPage() {
       user_id: user.id,
       title: "Fotolibro sin título",
       description: null,
-      format: "10x10",
-      cover_type: "soft",
+      format: DEFAULT_FORMAT,
+      cover_type: DEFAULT_PRICING_SETTINGS.defaultCoverKey,
     } as Record<string, unknown>)
     .select()
     .single();

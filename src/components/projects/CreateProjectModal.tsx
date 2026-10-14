@@ -1,25 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import { calculatePricing } from "@/lib/pricing/calculator";
-import { CANVAS_FORMAT_DIMENSIONS } from "@/lib/editor/canvasConfig";
-import type { ProjectFormat } from "@/lib/editor/canvasConfig";
-import type { PricingOutput } from "@/types/pricing";
-
-const FORMATS: { key: ProjectFormat; label: string }[] = [
-  { key: "10x10", label: "10×10\"" },
-  { key: "8.5x11", label: "8.5×11\"" },
-  { key: "8x10", label: "8×10\"" },
-];
-
-const COVERS: { key: "soft" | "hard"; label: string; surcharge: string }[] = [
-  { key: "soft", label: "Tapa blanda", surcharge: "+0 €" },
-  { key: "hard", label: "Tapa dura", surcharge: "+15 €" },
-];
+import { usePricingConfig } from "@/hooks/usePricing";
+import { FORMATS, DEFAULT_FORMAT } from "@/lib/editor/formats";
+import type { ProjectFormat } from "@/lib/editor/formats";
+import { withSupabaseAssetApiKey } from "@/lib/supabase/assetUrl";
 
 interface CreateProjectModalProps {
   open: boolean;
@@ -28,16 +18,34 @@ interface CreateProjectModalProps {
 
 export function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
   const router = useRouter();
+  const { config, loading: configLoading } = usePricingConfig();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [format, setFormat] = useState<ProjectFormat>("10x10");
-  const [coverType, setCoverType] = useState<"soft" | "hard">("soft");
+  const [format, setFormat] = useState<ProjectFormat>(DEFAULT_FORMAT);
+  const [coverType, setCoverType] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const pricing: PricingOutput = useMemo(
-    () => calculatePricing({ totalPages: 10, coverType, format }),
-    [format, coverType]
-  );
+  useEffect(() => {
+    if (coverType || config.covers.length === 0) return;
+    setCoverType(config.settings.defaultCoverKey || config.covers[0].key);
+  }, [config, coverType]);
+
+  const pricing = useMemo(() => {
+    try {
+      return calculatePricing(
+        {
+          totalPages: config.settings.basePages,
+          coverType,
+          format,
+        },
+        config
+      );
+    } catch {
+      return null;
+    }
+  }, [format, coverType, config]);
+
+  const selectedCover = config.covers.find((c) => c.key === coverType);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -101,9 +109,8 @@ export function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
 
         <div>
           <h4 className="text-sm font-medium text-neutral-700 mb-3">Formato</h4>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
             {FORMATS.map((f) => {
-              const dims = CANVAS_FORMAT_DIMENSIONS[f.key];
               const selected = format === f.key;
               return (
                 <button
@@ -118,7 +125,14 @@ export function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
                 >
                   <span className="text-xs font-semibold">{f.label}</span>
                   <span className="text-[10px] text-neutral-400">
-                    {dims.w}×{dims.h} px
+                    {f.w}×{f.h} px
+                  </span>
+                  <span className="text-[10px] capitalize text-neutral-400">
+                    {f.orientation === "portrait"
+                      ? "Vertical"
+                      : f.orientation === "landscape"
+                        ? "Horizontal"
+                        : "Cuadrado"}
                   </span>
                 </button>
               );
@@ -128,58 +142,128 @@ export function CreateProjectModal({ open, onClose }: CreateProjectModalProps) {
 
         <div>
           <h4 className="text-sm font-medium text-neutral-700 mb-3">Tipo de tapa</h4>
-          <div className="grid grid-cols-2 gap-2">
-            {COVERS.map((c) => {
-              const selected = coverType === c.key;
-              return (
-                <button
-                  key={c.key}
-                  onClick={() => setCoverType(c.key)}
-                  className={cn(
-                    "flex flex-col items-center gap-1 rounded-lg border-2 px-3 py-2 text-center transition-colors",
-                    selected
-                      ? "border-primary-600 bg-primary-50 text-primary-700"
-                      : "border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300"
-                  )}
-                >
-                  <span className="text-xs font-semibold">{c.label}</span>
-                  <span className="text-[10px] text-neutral-400">
-                    {c.surcharge}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          {configLoading ? (
+            <p className="text-xs text-neutral-400">Cargando tapas...</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
+                {config.covers.map((c) => {
+                  const selected = coverType === c.key;
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setCoverType(c.key)}
+                      className={cn(
+                        "flex flex-col overflow-hidden rounded-lg border-2 text-left transition-colors",
+                        selected
+                          ? "border-primary-600 ring-2 ring-primary-100"
+                          : "border-neutral-200 hover:border-neutral-300"
+                      )}
+                    >
+                      <div className="aspect-[3/4] w-full bg-neutral-100">
+                        {c.imageUrl ? (
+                          <img
+                            src={withSupabaseAssetApiKey(c.imageUrl)}
+                            alt={`Tapa ${c.name}`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] text-neutral-400">
+                            Sin imagen
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        className={cn(
+                          "px-2 py-1.5",
+                          selected ? "bg-primary-50" : "bg-white"
+                        )}
+                      >
+                        <span className="block text-xs font-semibold leading-tight text-neutral-800">
+                          {c.name}
+                        </span>
+                        <span className="text-[10px] text-neutral-400">
+                          {c.price > 0 ? `+${c.price.toFixed(2)}` : "Sin recargo"}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedCover && (
+                <div className="mt-3 flex gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                  <div className="h-24 w-[72px] shrink-0 overflow-hidden rounded-md bg-neutral-100">
+                    {selectedCover.imageUrl ? (
+                      <img
+                        src={withSupabaseAssetApiKey(selectedCover.imageUrl)}
+                        alt={`Vista previa de ${selectedCover.name}`}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[10px] text-neutral-400">
+                        Sin imagen
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-neutral-800">
+                      {selectedCover.name}
+                    </p>
+                    {selectedCover.description && (
+                      <p className="mt-0.5 text-xs text-neutral-500">
+                        {selectedCover.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="border-t border-neutral-200 pt-4">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-neutral-600">
-              Precio base (10 páginas)
-            </span>
-            <span className="text-sm font-semibold text-neutral-900">
-              {pricing.basePrice.toFixed(2)} {pricing.currency}
-            </span>
-          </div>
+          {pricing ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm text-neutral-600">
+                  Precio base ({pricing.basePages} páginas)
+                </span>
+                <span className="text-sm font-semibold text-neutral-900">
+                  {pricing.basePrice.toFixed(2)} {pricing.currency}
+                </span>
+              </div>
 
-          {pricing.coverSurcharge > 0 && (
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-neutral-600">Recargo tapa dura</span>
-              <span className="text-sm font-semibold text-neutral-900">
-                +{pricing.coverSurcharge.toFixed(2)} {pricing.currency}
-              </span>
-            </div>
+              {pricing.coverSurcharge > 0 && (
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm text-neutral-600">
+                    {pricing.coverName}
+                  </span>
+                  <span className="text-sm font-semibold text-neutral-900">
+                    +{pricing.coverSurcharge.toFixed(2)} {pricing.currency}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between border-t border-neutral-200 pt-3">
+                <span className="text-sm font-semibold text-neutral-900">Total</span>
+                <span className="text-lg font-bold text-primary-700">
+                  {pricing.total.toFixed(2)} {pricing.currency}
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-neutral-400">Selecciona un formato y una tapa.</p>
           )}
-
-          <div className="flex items-center justify-between border-t border-neutral-200 pt-3">
-            <span className="text-sm font-semibold text-neutral-900">Total</span>
-            <span className="text-lg font-bold text-primary-700">
-              {pricing.total.toFixed(2)} {pricing.currency}
-            </span>
-          </div>
         </div>
 
-        <Button className="w-full" onClick={handleCreate} disabled={creating}>
+        <Button
+          className="w-full"
+          onClick={handleCreate}
+          disabled={creating || !coverType}
+        >
           {creating ? "Creando..." : "Crear fotolibro"}
         </Button>
       </div>

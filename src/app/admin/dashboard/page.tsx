@@ -5,6 +5,9 @@ import {
   Users, UserCheck, DollarSign, CreditCard,
   TrendingUp, Package, Wallet,
 } from "lucide-react";
+import { formatMXN } from "@/lib/utils/format";
+import { PageTitle } from "@/components/ui/PageTitle";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface DashboardData {
   totalClients: number;
@@ -27,12 +30,8 @@ const cards: CardDef[] = [
   { key: "newThisMonth", label: "Nuevos este mes", icon: TrendingUp, color: "text-purple-600", bg: "bg-purple-50" },
   { key: "totalRevenue", label: "Ingresos totales", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50", isCurrency: true },
   { key: "paidOrders", label: "Órdenes pagadas", icon: CreditCard, color: "text-orange-600", bg: "bg-orange-50" },
-  { key: "totalProjects", label: "Proyectos", icon: Package, color: "text-indigo-600", bg: "bg-indigo-50" },
+  { key: "totalProjects", label: "Proyectos", icon: Package, color: "text-admin-600", bg: "bg-admin-50" },
 ];
-
-function formatMXN(value: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
-}
 
 function BarChart({ labels, data, max }: { labels: string[]; data: number[]; max: number }) {
   return (
@@ -43,7 +42,7 @@ function BarChart({ labels, data, max }: { labels: string[]; data: number[]; max
         return (
           <div key={i} className="flex flex-col items-center flex-1 gap-1">
             <span className="text-xs text-neutral-500">{val > 0 ? `$${Math.round(val/1000)}k` : ""}</span>
-            <div className="w-full bg-indigo-500 rounded-t" style={{ height: `${Math.max(pct, 2)}%` }} />
+            <div className="w-full bg-admin-500 rounded-t" style={{ height: `${Math.max(pct, 2)}%` }} />
             <span className="text-xs text-neutral-400">{month}</span>
           </div>
         );
@@ -64,7 +63,7 @@ export default function AdminDashboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64 text-neutral-400">Cargando dashboard...</div>;
+    return <div className="flex items-center justify-center h-64"><Spinner /></div>;
   }
 
   if (!data) return null;
@@ -74,7 +73,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-neutral-900">Dashboard</h1>
+      <PageTitle>Dashboard</PageTitle>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {cards.map(({ key, label, icon: Icon, color, bg, isCurrency }) => (

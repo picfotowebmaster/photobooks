@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Header } from "@/components/layout/Header";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { Footer } from "@/components/layout/Footer";
 import logo from "@/images/Logo-Pic-foto.png";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <AppHeader />
 
       <main className="flex-1">
         <section className="max-w-screen-2xl mx-auto px-6 py-20 text-center">

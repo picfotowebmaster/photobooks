@@ -7,6 +7,8 @@ import { PersonalInfoTab } from "@/components/profile/PersonalInfoTab";
 import { AddressesTab } from "@/components/profile/AddressesTab";
 import { BillingTab } from "@/components/profile/BillingTab";
 import { PaymentsTab } from "@/components/profile/PaymentsTab";
+import { PageTitle } from "@/components/ui/PageTitle";
+import { Spinner } from "@/components/ui/Spinner";
 import type { Profile, Address } from "@/types/profile";
 
 const tabs = [
@@ -47,7 +49,7 @@ export default function ProfilePage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64 text-neutral-400">Cargando perfil...</div>;
+    return <div className="flex items-center justify-center h-64"><Spinner /></div>;
   }
   if (!profile) {
     return <div className="text-neutral-500">Error al cargar perfil.</div>;
@@ -55,7 +57,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <h1 className="text-2xl font-bold text-neutral-900">Mi Perfil</h1>
+      <PageTitle>Mi Perfil</PageTitle>
 
       <ProfileTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 

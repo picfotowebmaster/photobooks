@@ -2,40 +2,47 @@
 
 import { Group, Rect, Line } from "react-konva";
 import { calculateGridLines, type GridConfig } from "@/lib/editor/gridConfig";
+import { mmToPx } from "@/lib/editor/coordinateMapper";
+import { TEMPLATE_BLEED_MM } from "@/lib/editor/templateCatalog";
 
 interface GridOverlayProps {
   pageWidth: number;
   pageHeight: number;
   gridConfig: GridConfig;
   rightPageX: number;
+  /** Sangrado a corte en px (banda física fuera del trim). */
+  bleedPx?: number;
 }
 
 /* ── Colour tokens (match reference image) ───────────────── */
 const BLEED_FILL = "rgba(255, 120, 120, 0.12)";
-const BLEED_STROKE = "rgba(255, 100, 100, 0.55)";
 const SAFE_STROKE = "rgba(0, 210, 210, 0.50)";
 const GRID_STROKE = "rgba(0, 210, 210, 0.30)";
+const CUT_STROKE = "rgba(239, 68, 68, 0.65)";
 const SPINE_STROKE = "rgba(0, 0, 0, 0.18)";
 
 const LINE_WIDTH = 2;
 const SAFE_LINE_WIDTH = 2;
 
 /**
- * Renders the grid overlay for a single page.
- * Drawn at the given x‑offset so we can reuse it for left & right pages.
+ * Renders the grid overlay for a single page at the given x-offset.
+ * The bleed band is drawn OUTSIDE the trim (physical sangrado), and the cut
+ * line is the trim rectangle itself.
  */
 function PageGrid({
   offsetX,
   pageWidth,
   pageHeight,
   gridConfig,
+  bleedPx,
 }: {
   offsetX: number;
   pageWidth: number;
   pageHeight: number;
   gridConfig: GridConfig;
+  bleedPx: number;
 }) {
-  const { bleedPx, safePx, columnXs, rowYs } = calculateGridLines(
+  const { safePx, columnXs, rowYs } = calculateGridLines(
     gridConfig,
     pageWidth,
     pageHeight
@@ -43,57 +50,54 @@ function PageGrid({
 
   return (
     <Group x={offsetX} listening={false}>
-      {/* ── Cut Zone (bleed) ──────────────────────────────── */}
-      {gridConfig.showBleed && (
+      {/* ── Bleed band (outside the trim) ─────────────────── */}
+      {gridConfig.showBleed && bleedPx > 0 && (
         <>
-          {/* Top bleed strip */}
           <Rect
-            x={0}
+            x={-bleedPx}
+            y={-bleedPx}
+            width={pageWidth + bleedPx * 2}
+            height={bleedPx}
+            fill={BLEED_FILL}
+            perfectDrawEnabled={false}
+          />
+          <Rect
+            x={-bleedPx}
+            y={pageHeight}
+            width={pageWidth + bleedPx * 2}
+            height={bleedPx}
+            fill={BLEED_FILL}
+            perfectDrawEnabled={false}
+          />
+          <Rect
+            x={-bleedPx}
             y={0}
-            width={pageWidth}
-            height={bleedPx}
-            fill={BLEED_FILL}
-            perfectDrawEnabled={false}
-          />
-          {/* Bottom bleed strip */}
-          <Rect
-            x={0}
-            y={pageHeight - bleedPx}
-            width={pageWidth}
-            height={bleedPx}
-            fill={BLEED_FILL}
-            perfectDrawEnabled={false}
-          />
-          {/* Left bleed strip */}
-          <Rect
-            x={0}
-            y={bleedPx}
             width={bleedPx}
-            height={pageHeight - bleedPx * 2}
+            height={pageHeight}
             fill={BLEED_FILL}
             perfectDrawEnabled={false}
           />
-          {/* Right bleed strip */}
           <Rect
-            x={pageWidth - bleedPx}
-            y={bleedPx}
+            x={pageWidth}
+            y={0}
             width={bleedPx}
-            height={pageHeight - bleedPx * 2}
+            height={pageHeight}
             fill={BLEED_FILL}
-            perfectDrawEnabled={false}
-          />
-          {/* Bleed outline */}
-          <Rect
-            x={bleedPx}
-            y={bleedPx}
-            width={pageWidth - bleedPx * 2}
-            height={pageHeight - bleedPx * 2}
-            stroke={BLEED_STROKE}
-            strokeWidth={LINE_WIDTH}
             perfectDrawEnabled={false}
           />
         </>
       )}
+
+      {/* ── Cut line (trim) ───────────────────────────────── */}
+      <Rect
+        x={0}
+        y={0}
+        width={pageWidth}
+        height={pageHeight}
+        stroke={CUT_STROKE}
+        strokeWidth={LINE_WIDTH}
+        perfectDrawEnabled={false}
+      />
 
       {/* ── Safe Zone ─────────────────────────────────────── */}
       {gridConfig.showSafeZone && (
@@ -145,6 +149,7 @@ export function GridOverlay({
   pageHeight,
   gridConfig,
   rightPageX,
+  bleedPx = mmToPx(TEMPLATE_BLEED_MM),
 }: GridOverlayProps) {
   const anyVisible =
     gridConfig.showBleed ||
@@ -162,6 +167,7 @@ export function GridOverlay({
         pageWidth={pageWidth}
         pageHeight={pageHeight}
         gridConfig={gridConfig}
+        bleedPx={bleedPx}
       />
 
       {/* Right page */}
@@ -170,6 +176,7 @@ export function GridOverlay({
         pageWidth={pageWidth}
         pageHeight={pageHeight}
         gridConfig={gridConfig}
+        bleedPx={bleedPx}
       />
 
       {/* ── Spine (centre line between pages) ────────────── */}
