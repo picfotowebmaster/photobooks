@@ -1,0 +1,7 @@
+# Configuración de Netlify
+
+[build.environment]
+  # Las variables NEXT_PUBLIC_* son públicas por diseño: Next.js las inserta
+  # (inline) en el bundle del cliente y del middleware. No son secretos, por lo
+  # que indicamos al escáner de Netlify que las omita y no falle el build.
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
