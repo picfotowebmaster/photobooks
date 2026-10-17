@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { isAdminRole } from "@/lib/auth/roles";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -19,7 +20,7 @@ export async function middleware(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.role !== "admin") {
+    if (!profile || !isAdminRole(profile.role)) {
       return NextResponse.redirect(new URL("/projects", request.url));
     }
   }

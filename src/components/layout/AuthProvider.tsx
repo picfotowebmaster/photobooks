@@ -3,12 +3,14 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { type User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { isAdminRole, isSuperadmin } from "@/lib/auth/roles";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   role: string | null;
   isAdmin: boolean;
+  isSuperadmin: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -17,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   role: null,
   isAdmin: false,
+  isSuperadmin: false,
   signOut: async () => {},
 });
 
@@ -61,7 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, role, isAdmin: role === "admin", signOut }}
+      value={{
+        user,
+        loading,
+        role,
+        isAdmin: isAdminRole(role),
+        isSuperadmin: isSuperadmin(role),
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

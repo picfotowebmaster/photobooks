@@ -2,6 +2,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { redirect } from "next/navigation";
+import { isAdminRole } from "@/lib/auth/roles";
 
 export default async function AdminLayout({
   children,
@@ -19,7 +20,7 @@ export default async function AdminLayout({
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "admin") redirect("/projects");
+  if (!profile || !isAdminRole(profile.role)) redirect("/projects");
 
   return (
     <div className="min-h-screen flex flex-col">
