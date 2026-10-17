@@ -18,6 +18,10 @@ dist/
 .env.development.local
 .env.test.local
 
+# Local GitHub token (never commit)
+.github-token
+.github-token.*
+
 # Debug
 npm-debug.log*
 yarn-debug.log*
